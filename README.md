@@ -8,7 +8,7 @@ A new, independent PrivateDAO wallet experience for the web, Chrome side panel, 
 - Recovery phrases are encrypted on-device with Web Crypto before they are stored in IndexedDB.
 - PrivatePAY can request and display current x402 requirements. It does not sign or settle a payment in this version.
 - Wallet signing and trade execution are not enabled yet.
-- Auth0 and Descope integrations are staged and disabled until the new production origins and Descope project/flow configuration are verified.
+- Auth0 is staged and disabled until the new production origins are allowlisted. Descope is reserved for machine and agent authorization; scoped API/MCP enforcement still needs to be wired and enabled.
 - The Chrome extension is a Manifest V3 side panel. Android uses Capacitor and keeps its web bundle local.
 
 ## Development

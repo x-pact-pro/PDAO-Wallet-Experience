@@ -7,7 +7,7 @@ window.PDAO_CONFIG = Object.freeze({
   }),
   descope: Object.freeze({
     enabled: false,
-    projectId: '',
+    projectId: 'P3LeEm9CWaHUiGrt0hNS1Xglk2Mt',
     agentApiOrigin: 'https://agents.privatedao.org',
   }),
   marketData: Object.freeze({
