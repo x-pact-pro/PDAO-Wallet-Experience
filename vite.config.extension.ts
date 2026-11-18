@@ -1,0 +1,24 @@
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  base: './',
+  plugins: [react()],
+  publicDir: 'public',
+  build: {
+    outDir: 'dist-extension',
+    emptyOutDir: true,
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'react-core', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 30 },
+            { name: 'auth0', test: /node_modules[\\/]@auth0[\\/]/, priority: 25 },
+            { name: 'icons', test: /node_modules[\\/]lucide-react[\\/]/, priority: 20 },
+            { name: 'vendor', test: /node_modules[\\/]/, priority: 10 },
+          ],
+        },
+      },
+    },
+  },
+})
