@@ -91,3 +91,18 @@
 @media(max-width:600px){.portfolio-holdings{padding:18px 16px}.holding-row{grid-template-columns:36px minmax(90px,1fr) minmax(110px,auto);gap:10px}.holding-state{display:none}.holding-name small{font-size:9px}.holding-amount b{font-size:11px}.holdings-observed{font-size:9px}}
 .spl-token{background:linear-gradient(145deg,#cbb780,#756846);color:#101521}
 .descope-security{background:radial-gradient(ellipse at 100% 0,rgba(103,155,220,.12),transparent 48%),linear-gradient(145deg,rgba(16,30,46,.96),rgba(11,20,32,.98));border-color:rgba(125,157,195,.17)}.descope-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}.descope-wordmark{display:inline-flex;align-items:center;gap:8px;color:#f1f4f8;font:600 18px/1 Arial,sans-serif;letter-spacing:-.055em}.descope-wordmark>i{width:22px;height:22px;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:4px;border:1px solid rgba(162,190,225,.24);border-radius:7px;background:linear-gradient(145deg,#263e5b,#17283e)}.descope-wordmark>i>b{height:2px;border-radius:2px;background:#a8c6ef}.descope-wordmark>i>b:nth-child(2){width:70%;background:#83a8dc}.descope-state{display:flex;align-items:center;gap:6px;color:#b8c8d8;font:8px var(--mono);letter-spacing:.04em}.descope-state>i{width:6px;height:6px;border-radius:50%;background:#c6ae72;box-shadow:0 0 8px rgba(198,174,114,.36)}.descope-security h3{margin:0 0 7px;color:#edf2f6;font-size:14px;font-weight:500}.descope-security>p{font-size:9px;line-height:1.7}.descope-scopes{display:flex;flex-wrap:wrap;gap:6px;margin:13px 0}.descope-scopes span{padding:6px 8px;border:1px solid rgba(151,176,207,.13);border-radius:7px;background:rgba(255,255,255,.025);color:#aebfd0;font-size:8px}.descope-note{display:flex;align-items:flex-start;gap:9px;padding:10px;border:1px solid rgba(198,174,114,.16);border-radius:9px;background:rgba(198,174,114,.045)}.descope-note>svg{flex:none;margin-top:1px;color:#d0bd87}.descope-note>span{display:grid;gap:4px}.descope-note b{color:#ddd2ad;font-size:9px;font-weight:500}.descope-note small{color:#94a2b0;font-size:8px;line-height:1.55}.descope-doc-link{display:inline-flex;align-items:center;gap:6px;margin-top:12px;color:#a9c7ed;font-size:9px;text-decoration:none}.descope-doc-link:hover{color:#d1e3fa}
+
+/* Keep the desktop sidebar clean; show its close control only while navigation is a drawer. */
+.sidebar-brand .sidebar-close{display:none}
+@media(max-width:850px){.sidebar-brand .sidebar-close{display:grid}}
+
+/* Small-screen market table: keep the key quote visible without horizontal clipping. */
+@media(max-width:620px){
+  .market-table{overflow-x:hidden}
+  .market-table .table-head,.market-table .table-row{width:100%;min-width:0;grid-template-columns:minmax(0,1fr) minmax(76px,.62fr) 58px 27px;gap:8px}
+  .market-table .table-head span:nth-child(2),.market-table .table-row .table-spark,
+  .market-table .table-head span:nth-child(5),.market-table .table-row .muted-value{display:none}
+  .market-table .table-head span:nth-child(3){grid-column:2}
+  .market-table .table-head span:nth-child(4){grid-column:3}
+  .market-table .table-head span:nth-child(6){grid-column:4}
+}
