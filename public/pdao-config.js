@@ -11,7 +11,7 @@ window.PDAO_CONFIG = Object.freeze({
   descope: Object.freeze({
     enabled: false,
     projectId: 'P3LeEm9CWaHUiGrt0hNS1Xglk2Mt',
-    agentApiOrigin: 'https://agents.privatedao.org',
+    agentApiOrigin: 'https://nnnx1tvyqb.execute-api.us-east-1.amazonaws.com',
   }),
   persona: Object.freeze({ templateId: '', environmentId: '' }),
   marketData: Object.freeze({

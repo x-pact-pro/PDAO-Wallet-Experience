@@ -1,5 +1,34 @@
 # Release handoff
 
+## Current source and infrastructure status — 2026-11-19
+
+The product in this repository is the new Wallet Atelier project, separate from
+the existing wallet in `x-pact-pro/PDAO-Wallet`. Its production web deployment
+is AWS Amplify app `d2iwf2bo6lci0r` in `us-east-1` at
+https://main.d2iwf2bo6lci0r.amplifyapp.com/. This supersedes the earlier r7
+handoff statement that the new app had no production URL. Vercel is not the
+deployment target. GitHub Pages is a secondary preview only.
+
+Latest packaged artifacts from the current Descope gateway UI and documentation
+changes (r12):
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Web-0.1.0-20261119-r12.zip` | `6f60085551dd2aa407752bc10b488c82cb529731f8b8534ee5f71f060d5e73ad` | Web build; pending Amplify release |
+| `PDAO-Wallet-Chrome-0.1.0-20261119-r12.zip` | `f081afc722e38c890065fe7e4e4011e60261c722068e1358ade9048dcfe91463` | MV3 package |
+| `PDAO-Wallet-Android-debug-0.1.0-20261119-r12.apk` | `efb921a37f895b685ce65c4185e7828874a801a6f879f5b9146bc2ecd0334cb9` | Debug APK, target SDK 35; not release-signed |
+
+A separate Descope agent identity gateway is deployed from
+`infra/agent-gateway/template.yaml` to AWS `us-east-1`:
+`https://nnnx1tvyqb.execute-api.us-east-1.amazonaws.com`. `/health` returned
+200 and `GET /v1/agent/identity` returned 401 without a token. The Descope
+Resource and agent clients are not yet configured, so a valid scoped token has
+not been accepted. The r12 builds include gateway source and updated Descope
+status branding; commit/push and Amplify deployment are pending.
+
+For the complete project map and remaining objective checklist, see
+[`session-index.md`](session-index.md).
+
 ## Build r7 — 2026-11-19
 
 Source commit: `924eb6d8a6a9fc6e57feb4bba7c7b4246f94b370` on `main`.

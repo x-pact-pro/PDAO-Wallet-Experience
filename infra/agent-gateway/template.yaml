@@ -1,0 +1,148 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: PDAO Wallet agent identity API protected by Descope JWT audience and scopes.
+
+Parameters:
+  DescopeProjectId:
+    Type: String
+    Default: P3LeEm9CWaHUiGrt0hNS1Xglk2Mt
+    AllowedPattern: '[A-Za-z0-9]+'
+    Description: Public Descope project identifier (not a management key).
+  WalletOrigin:
+    Type: String
+    Default: https://main.d2iwf2bo6lci0r.amplifyapp.com
+    AllowedPattern: '^https://[A-Za-z0-9.-]+$'
+    Description: Exact HTTPS origin permitted to call the agent API from the wallet.
+
+Resources:
+  AgentApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: pdao-wallet-agent-gateway
+      ProtocolType: HTTP
+      Description: PDAO agent identity endpoint; human wallet payments remain on their canonical API.
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref WalletOrigin
+        AllowMethods:
+          - GET
+          - OPTIONS
+        AllowHeaders:
+          - authorization
+          - content-type
+        MaxAge: 300
+
+  AgentAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref AgentApi
+      Name: descope-agent-resource-jwt
+      AuthorizerType: JWT
+      IdentitySource:
+        - $request.header.Authorization
+      JwtConfiguration:
+        Issuer: !Sub 'https://api.descope.com/${DescopeProjectId}'
+        Audience:
+          - !Sub 'https://${AgentApi}.execute-api.${AWS::Region}.amazonaws.com'
+
+  AgentHandlerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'pdao-wallet-agent-gateway-${AWS::Region}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+
+  AgentHandler:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: pdao-wallet-agent-identity
+      Runtime: nodejs22.x
+      Handler: index.handler
+      Role: !GetAtt AgentHandlerRole.Arn
+      Timeout: 5
+      MemorySize: 128
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            const headers = {
+              'content-type': 'application/json; charset=utf-8',
+              'cache-control': 'no-store',
+              'x-content-type-options': 'nosniff',
+            };
+            if (event.rawPath === '/health') {
+              return { statusCode: 200, headers, body: JSON.stringify({ status: 'available' }) };
+            }
+            const claims = event.requestContext?.authorizer?.jwt?.claims;
+            if (!claims || typeof claims.sub !== 'string') {
+              return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
+            }
+            const scopes = typeof claims.scope === 'string' ? claims.scope.split(/\s+/).filter(Boolean) : [];
+            return {
+              statusCode: 200,
+              headers,
+              body: JSON.stringify({
+                authenticated: true,
+                agentId: claims.sub,
+                clientId: typeof claims.azp === 'string' ? claims.azp : null,
+                scopes,
+                expiresAt: Number.isFinite(Number(claims.exp)) ? Number(claims.exp) : null,
+              }),
+            };
+          };
+
+  AgentIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref AgentApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt AgentHandler.Arn
+      PayloadFormatVersion: '2.0'
+
+  AgentIdentityRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref AgentApi
+      RouteKey: GET /v1/agent/identity
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AgentAuthorizer
+      AuthorizationScopes:
+        - agent.identity.read
+      Target: !Sub 'integrations/${AgentIntegration}'
+
+  HealthRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref AgentApi
+      RouteKey: GET /health
+      AuthorizationType: NONE
+      Target: !Sub 'integrations/${AgentIntegration}'
+
+  AgentStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref AgentApi
+      StageName: '$default'
+      AutoDeploy: true
+
+  AgentInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AgentHandler
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${AgentApi}/*/*'
+
+Outputs:
+  AgentApiUrl:
+    Description: API URL and the exact audience URI to register as a Descope API Resource.
+    Value: !Sub 'https://${AgentApi}.execute-api.${AWS::Region}.amazonaws.com'
+  DescopeIssuer:
+    Value: !Sub 'https://api.descope.com/${DescopeProjectId}'
+  AgentIdentityScope:
+    Value: agent.identity.read

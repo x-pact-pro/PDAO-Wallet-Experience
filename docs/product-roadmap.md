@@ -23,11 +23,15 @@
 - [x] Canonical status view, local transaction preparation and inspection, wallet signing, verification, explicit settlement confirmation, pending status handling, and confirmed provider receipt display.
 - [x] Responsive Trading workspace surfaces: local policy preferences, encrypted local bot-secret vault, team profiles, and external DApp directory.
 - [ ] Connect team profiles to authorized trading-agent APIs; add provider route discovery, quote/sign/receipt execution, and live status without exposing wallet secrets.
+- [ ] Add actual native SOL/ETH send flows with exact preview, wallet-local signature, and chain-confirmed receipt.
+- [ ] Add verified trade-provider routes (including meme-launch venues) with live provider quotes and user-controlled signing; do not label DApp launchers as bot execution.
+- [ ] Define paid AI/trading plans and usage commissions, then implement automatic PDAO conversion and treasury settlement only through an exact quoted route, verified destination, and on-chain receipt. Agent Exchange prices remain live catalog data; PrivatePAY keeps its provider-defined terms.
 
 ## Phase 5 — Identity and assistant
 - [x] Auth0 SPA integration uses a memory token cache on the new Amplify origin; Android uses a separate native client. No private-key coupling.
 - [x] Descope agent security is branded and documented separately from Auth0 human sign-in; the Bots screen reports the actual rollout state.
-- [ ] Enable agent authorization only after a PDAO-owned API Resource, scoped client policies, and server-side JWT audience/scope validation are deployed. Existing Stockholm Agent Exchange/x402 endpoints remain on their current contract.
+- [x] Deploy a PDAO-owned AWS HTTP API with Descope issuer/audience validation and a route-level `agent.identity.read` requirement; missing bearer tokens return 401.
+- [ ] Create the Descope API Resource and approved agent clients/policies; verify a real scoped token before enabling agent access. Existing Stockholm Agent Exchange/x402 endpoints remain on their current contract.
 - [x] Ask PDAO API integration with conversation history, current service catalog, provider errors, and no embedded paid-provider keys.
 
 ## Phase 6 — Distribution

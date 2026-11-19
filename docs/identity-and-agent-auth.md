@@ -8,30 +8,35 @@
 
 ## Current rollout state
 
-The connected Descope project is named `PrivateDAO`. Its project currently has SSO, flows, roles, permissions, and access keys configured; tenant setup is listed as a gap. Runtime `descope.enabled` remains `false` in `public/pdao-config.js`. The product therefore displays **Project connected / server enforcement pending** and does not claim that current Agent Exchange or PrivatePAY routes validate Descope tokens.
+The connected Descope project is named `PrivateDAO`. It currently has SSO, flows, roles, permissions, and access keys; tenant setup is listed as a gap. The project has no API Resources or agentic clients yet, and its FGA schema is empty. Runtime `descope.enabled` remains `false` in `public/pdao-config.js`.
+
+A PDAO-owned HTTP API is deployed in AWS `us-east-1` at `https://nnnx1tvyqb.execute-api.us-east-1.amazonaws.com`. API Gateway has a native Descope JWT authorizer configured with issuer `https://api.descope.com/P3LeEm9CWaHUiGrt0hNS1Xglk2Mt`, the API URL as the exact audience, and a protected `GET /v1/agent/identity` route requiring `agent.identity.read`. Live evidence: `GET /health` returns 200; the protected identity route returns 401 without a bearer token. The Descope Resource, client grants, and valid scoped-token acceptance check are pending, so the API does not yet accept an agent token; the UI reports **Descope Resource binding pending**.
 
 The existing Stockholm Agent Exchange API owns its route contract. Public catalog and x402 payment flows retain their current behavior; wallet-signed x402 authorization remains separate from agent identity. Do not attach a mandatory Descope check to those user payment routes or change the Stockholm Lambda as part of this wallet release.
 
-## Resource-server design for agent routes
+## Resource-server contract and rollout
 
-Before marking an agent route as protected:
+The CloudFormation source is `infra/agent-gateway/template.yaml`. The initial route set has no unauthenticated agent operation. API Gateway's native JWT authorizer checks the Descope issuer, signature, expiry, and audience; route-level `AuthorizationScopes` requires each route's permission. The identity route is a validation/introspection endpoint only; team-bot trade execution and paid job execution are not implemented by this route.
 
-1. Create a Descope API Resource for a new PDAO-owned agent gateway/API, with a dedicated audience and least-privilege scopes (for example `agent.catalog.read`, `agent.strategy.read`, `agent.trade.request`, `agent.payment.request`). Keep settlement and transfer execution behind their existing user-signature and policy controls.
-2. Register only the relevant agent clients against that Resource and use Descope policy to grant their scopes. Keep OAuth client credentials server-side in AWS Secrets Manager; never ship them in the SPA, Chrome extension, or Android bundle.
-3. On the server, validate JWT signature against the Descope project JWKs, plus `iss`, `exp`, the exact Resource `aud`, required `scope`, and an allowed `azp` where applicable. Fail closed for missing, expired, malformed, wrong-audience, or insufficient-scope tokens.
-4. Keep separate agent-only endpoints. Do not make a Descope bearer token a substitute for a user's explicit wallet signature, a fresh x402 quote, payment authorization, or settlement receipt.
-5. Add audit events for the agent identity, requested capability, policy decision, and result. Never record bearer tokens, private keys, or recovery phrases.
-6. Test both acceptance and rejection paths before enabling `descope.enabled`; the app-side flag alone is not security enforcement.
+To activate authorized agents:
 
-The SPA and extension can display agent identity state, but cannot protect an API by themselves. The enforcement boundary must be the AWS gateway/service that owns the agent route. Android uses the same server-side policy and must not embed a client secret.
+1. Create a Descope API Resource named `PDAO Wallet Agent Gateway`, with URI exactly `https://nnnx1tvyqb.execute-api.us-east-1.amazonaws.com` and scope `agent.identity.read`.
+2. Associate only approved agent clients with that Resource and grant the identity scope through Descope policies. The project currently has no agentic clients; keep any client secret in AWS Secrets Manager and never ship it to the SPA, Chrome extension, or Android bundle.
+3. Configure the Descope AWS API Gateway JWT template if required, then verify that Descope issues tokens with the gateway URI in `aud` and `agent.identity.read` in `scope`.
+4. Verify rejection for missing, expired, malformed, wrong-audience, and insufficient-scope tokens, and acceptance for an authorized short-lived token. Check `azp` where client restriction is required.
+5. Add audited, scoped agent endpoints as each capability is implemented. Do not make a Descope bearer token a substitute for a user's explicit wallet signature, a fresh x402 quote, payment authorization, or settlement receipt.
+6. Keep audit records free of bearer tokens, private keys, and recovery phrases. Only then enable `descope.enabled` and use “secured by Descope” branding.
+
+The SPA, extension, and Android app use the same gateway audience and server-side policy; none can enforce authorization locally or embed a client secret. The existing Stockholm Agent Exchange and PrivatePAY routes retain their contracts and were not modified.
 
 ## Branding and provider disclosures
 
-Use the provider name **Descope** with the linked official documentation in agent-security surfaces. Only display “secured by Descope” or “Powered by Descope” after the API-side resource and token checks are deployed and verified. Until then, state that the project is connected and enforcement is pending. Keep Auth0 attribution tied only to enabled human sign-in.
+Use the provider name **Descope** with the linked official documentation in agent-security surfaces. Only display “secured by Descope” or “Powered by Descope” after the API Resource, scoped clients, and token acceptance/rejection checks are configured and verified. Until then, show **Gateway deployed / Descope Resource binding pending**. Keep Auth0 attribution tied only to enabled human sign-in.
 
 ## References
 
 - [Descope Resources and OAuth resource servers](https://docs.descope.com/resources)
 - [Descope session validation](https://docs.descope.com/sessions/validation)
+- [Descope JWTs with AWS API Gateway](https://docs.descope.com/sessions/validation/jwt-authorizers/aws-jwt-authorizer)
 - [Descope Agentic Identity Hub](https://docs.descope.com/agentic-identity-hub)
 - [Descope Access Keys](https://docs.descope.com/access-keys)
