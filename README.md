@@ -38,7 +38,7 @@ cd android
 
 ## Distribution
 
-The web app is hosted in AWS Amplify `us-east-1` at https://main.d2iwf2bo6lci0r.amplifyapp.com/. GitHub Pages remains a secondary preview. See `fastlane/metadata/android/en-US` for the F-Droid listing draft and `.fdroid.yml` for the source-build recipe. A local unsigned release APK now builds offline; it is not directly installable and has not been submitted to F-Droid. F-Droid would build and sign its accepted source.
+The web app is hosted in AWS Amplify `us-east-1` at https://main.d2iwf2bo6lci0r.amplifyapp.com/. GitHub Pages remains a secondary preview. See `fastlane/metadata/android/en-US` for the F-Droid listing draft and `.fdroid.yml` for the source-build recipe. A clean-clone offline Android release build succeeds; its APK is unsigned and not directly installable. No F-Droid submission has been made. The current Chrome MV3 package is available from the release handoff in `docs/release-handoff.md`; browser installation review remains open.
 
 ## License
 
