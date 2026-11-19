@@ -9,6 +9,7 @@
 
 ## Phase 2 — Local custody
 - [x] Generate/import BIP39 recovery phrases; derive Solana and EVM addresses; encrypt the phrase locally with WebCrypto; verify the passphrase.
+- [x] Discover injected Solana wallets and register Android Mobile Wallet Adapter through Wallet Standard.
 - [ ] Read balances and send native assets with exact local signing and chain confirmation.
 
 ## Phase 3 — Live intelligence
@@ -27,9 +28,11 @@
 - [ ] Ask PDAO API integration with visible quota/provider states and no embedded paid-provider keys.
 
 ## Phase 6 — Distribution
-- [x] Chrome MV3 build and permission review. Reproducible ZIP and browser installation review remain open.
-- [ ] Capacitor Android app, F-Droid metadata, app icon/screenshots, SDK build, APK verification, and emulator/device check.
-- [ ] Public GitHub source repository and Vercel production deployment on a new URL. Keep the existing wallet domain untouched.
+- [x] Chrome MV3 build and reproducible ZIP artifact. Browser installation review remains open.
+- [x] Capacitor Android app shell, Android MWA registration, SDK debug build, and APK checksum.
+- [ ] F-Droid metadata/release signing, app icon and screenshots, plus emulator/device check.
+- [x] Public GitHub source repository.
+- [ ] Vercel production deployment on a new URL. Keep the existing wallet domain untouched.
 
 ## Phase 7 — Verification and handoff
 - [ ] Desktop/mobile screenshots for every section, responsive/accessibility review, test/build checks, security boundary review.
