@@ -10,7 +10,7 @@ A new, independent PrivateDAO wallet experience for the web, Chrome side panel, 
 - PrivatePAY requests payer-bound x402 requirements, prepares the provider transaction, signs on-device, submits it for verification, and requests settlement only after explicit confirmation. Pending/provider-unavailable responses remain pending; only a confirmed provider result is shown as settled.
 - The browser wallet phrase and private key remain local. The facilitator receives the signed payment transaction for verification and settlement.
 - Solana swaps use live Jupiter quotes and require a user signature in the selected wallet. PrivatePAY requests an exact provider quote and requires explicit approval before settlement.
-- Auth0 is enabled for this independent app with memory-only browser token storage and a separate native Android client. It does not receive wallet secrets. The current tenant is development; the production hostname blocks Auth0 redirects until a verified production tenant/client is configured.
+- Auth0 uses memory-only browser token storage and a separate native Android client. It does not receive wallet secrets. The current tenant is development; the production hostname, Chrome extension, and Android builds block Auth0 redirects until a verified production tenant/client is configured.
 - Ask PDAO uses the existing AWS wallet AI endpoint in `us-east-1`; the API keeps its guardrail, source checks, and request quotas. It receives the current public service catalog, never wallet keys.
 - Descope remains separate for agent identity and scoped MCP/resource access; it is not used as a human login substitute for Auth0.
 - A PDAO-owned agent identity API is deployed in AWS Virginia with a Descope JWT authorizer and per-route scope enforcement. Descope Resource/client setup and valid-token acceptance remain pending; see `docs/identity-and-agent-auth.md`.
@@ -38,7 +38,7 @@ cd android
 
 ## Distribution
 
-The web app is hosted in AWS Amplify `us-east-1` at https://main.d2iwf2bo6lci0r.amplifyapp.com/. GitHub Pages remains a secondary preview. See `fastlane/metadata/android/en-US` for the F-Droid listing draft and `.fdroid.yml` for the source-build recipe. A clean-clone offline Android release build succeeds; its APK is unsigned and not directly installable. No F-Droid submission has been made. The Chrome MV3 preview package is available at https://github.com/x-pact-pro/PDAO-Wallet-Experience/releases/tag/v0.1.0-preview.1; Chrome Web Store publishing and wallet-provider interaction review remain open.
+The web app is hosted in AWS Amplify `us-east-1` at https://main.d2iwf2bo6lci0r.amplifyapp.com/. GitHub Pages remains a secondary preview. See `fastlane/metadata/android/en-US` for the F-Droid listing draft and `.fdroid.yml` for the source-build recipe. The F-Droid 2.4.5 metadata lint passes against the official fdroiddata categories. Android 0.1.1 release APK builds unsigned for F-Droid; isolated F-Droid build and submission remain open. The Chrome MV3 preview package is available at https://github.com/x-pact-pro/PDAO-Wallet-Experience/releases/tag/v0.1.1-preview.2; Chrome Web Store publishing and wallet-provider interaction review remain open.
 
 ## License
 

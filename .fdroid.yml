@@ -1,6 +1,5 @@
 Categories:
-  - Finance
-  - Internet
+  - Finance Manager
 AntiFeatures:
   - NonFreeNet
 License: MIT
@@ -15,6 +14,9 @@ Description: |
   Private keys and recovery phrases are encrypted and kept on the user's
   device. Network features use public blockchain RPC endpoints and published
   service APIs.
+
+  Live market data and connected services require network access to their
+  respective providers.
 RepoType: git
 Repo: https://github.com/x-pact-pro/PDAO-Wallet-Experience
 Builds:
@@ -24,5 +26,5 @@ Builds:
     subdir: android
     gradle: yes
 UpdateCheckMode: RepoManifest/main
-CurrentVersion: 0.1.0
-CurrentVersionCode: 1
+CurrentVersion: 0.1.1
+CurrentVersionCode: 2

@@ -1,5 +1,36 @@
 # Release handoff
 
+## r23 — Auth0 environment guard and 0.1.1 cross-platform preview
+
+Source `3e7c82b` keeps the development Auth0 tenant out of the official
+`wallet.privatedao.org` origin, Android builds, and Chrome extension pages.
+Wallet functionality remains available without Auth0. Version `0.1.1` uses
+Android `versionCode 2`; F-Droid recipe `.fdroid.yml` pins source commit
+`7171a01524cf4a172c1430350e72d5e62d4b091e`.
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Web-0.1.1-r23.zip` | `a2fba9b0611a050392526bfbfadcfdeca5ec2fa29d50bdad03054e54d152ffe0` | Amplify manual deployment job `17` succeeded; published root/runtime/JS/CSS returned HTTP 200 |
+| `PDAO-Wallet-Chrome-0.1.1-r23.zip` | `076c33736e46c7eefc48e919f8fa87077c97692d68da4d15198451256744e0a0` | GitHub preview release `v0.1.1-preview.2`; ZIP integrity verified |
+| `PDAO-Wallet-Android-debug-0.1.1-r23.apk` | `630f30265c9ad5141e2f45ccbc812b44ff259fb19e730c9b295a2225d943d0a1` | Debug-signed, package metadata `org.privatedao.wallet`, target SDK 35 |
+| `PDAO-Wallet-Android-release-unsigned-0.1.1-r23.apk` | `e4325ad4c666818772d4f46ff0270fe822784484d8b5c07079dc6c8958551c4e` | Unsigned release build for the source-build/F-Droid path; not directly installable |
+
+Artifacts are in `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/r23-0.1.1/`.
+Web, Chrome MV3, Android debug, and Android release builds succeeded. The
+release manifest reports minimum SDK 24, target SDK 35, and version code 2.
+Amplify app `d2iwf2bo6lci0r` deployed job `17` by direct ZIP upload because
+the app has no Git provider connection. The live app is
+`https://main.d2iwf2bo6lci0r.amplifyapp.com/`; the runtime config and all
+hashed entry assets returned HTTP 200, and the published bundle contains the
+distributed-app Auth0 environment guard. The original app, custom domain DNS,
+and Stockholm Agent Exchange were not changed.
+No Android device is attached, so no install, biometric, wallet-provider, or
+screen-capture evidence is available. F-Droid `fdroid lint` 2.4.5 passed using
+the official fdroiddata category and anti-feature definitions. The isolated
+F-Droid build and repository submission remain open; Chrome Web Store
+publication remains open. The Android release APK has no signing key and must
+not be presented as installable.
+
 ## Current source and infrastructure status — 2026-11-19
 
 ### r22 — clean-clone Android source build and F-Droid metadata
