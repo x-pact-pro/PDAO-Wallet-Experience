@@ -10,7 +10,8 @@
 ## Phase 2 — Local custody
 - [x] Generate/import BIP39 recovery phrases; derive Solana and EVM addresses; encrypt the phrase locally with WebCrypto; verify the passphrase.
 - [x] Discover injected Solana wallets and register Android Mobile Wallet Adapter through Wallet Standard.
-- [ ] Read balances and send native assets with exact local signing and chain confirmation.
+- [x] Read native SOL and ETH balances for local and connected addresses on the explicit Solana and Ethereum mainnets, with partial and unavailable states.
+- [ ] Send native assets with exact local signing and chain confirmation.
 
 ## Phase 3 — Live intelligence
 - [x] CoinGecko market tape, movement/volume sorting, local watchlist and unavailable states.
