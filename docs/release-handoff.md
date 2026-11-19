@@ -534,3 +534,6 @@ Artifacts:
 | `PDAO-Wallet-Android-debug-0.1.1-20261120-r29.apk` | `46a3efa4f3d12b10ebc005385e90ae9d6b78c656a59c3c8bc9914a6eaa0bfb7d` |
 | `PDAO-Wallet-Android-release-unsigned-0.1.1-20261120-r29.apk` | `16fce7baf637c63dd9ead2b12202276e485c5beb5ec5ebcc1c67a3dd38f49b69` |
 | `PDAO-Wallet-Chrome-0.1.1-20261120-r29.zip` | `80f458bdc51fc326f68fd60aa02ed53d478b7d341b0afa9a0e87554cc4b25ab9` |
+
+Amplify manual deployment job `49` completed `DEPLOY=SUCCEED` and
+`VERIFY=SUCCEED` in `us-east-1`. The public default host returned HTTP 200.
