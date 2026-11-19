@@ -22,6 +22,8 @@ this new app at this handoff. The existing wallet domain was not changed.
 
 ## Build r9 — Solana token balances
 
+Source commit: `81a54a7` on `main`.
+
 Adds read-only balances for both the original SPL Token program and Token-2022.
 Balances aggregate by mint across local and connected Solana addresses. Unknown
 mints are identified by their shortened on-chain address; no unverified token
