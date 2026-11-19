@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: process.env.PDAO_GITHUB_PAGES === '1' ? '/PDAO-Wallet-Experience/' : '/',
   plugins: [react()],
   build: {
     rolldownOptions: {
