@@ -1,6 +1,6 @@
 # PDAO Wallet session index
 
-Updated: 2026-11-19 (r21). This index reconciles the original brief with the current
+Updated: 2026-11-19 (r22). This index reconciles the original brief with the current
 independent product, repositories, deployed AWS resources, and verified gaps.
 It is a navigation/handoff aid, not proof that unfinished product features are
 complete.
@@ -95,7 +95,19 @@ older `PDAO Wallet` Auth0 client was not modified.
 - Pump.fun, Moonshot, and other meme-venue connections are not live trading
   integrations yet. A DApp link is not an agent execution result.
 
-## Current handoff (r20)
+## Current handoff (r22)
+
+- Android target SDK 35 release build now succeeds from a clean clone at
+  `d38902b7951e157e679ecb4f946fee1ed29e35f7`; Capacitor Android modules are
+  tracked in source, so this Gradle build does not depend on `node_modules`.
+  APK: `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/PDAO-Wallet-Android-release-unsigned-0.1.0-20261119-r22.apk`
+  (SHA-256 `fb4474c6acc0286e34da4261b35eb941b63b0124dd2962400640d943a498195a`).
+  It is unsigned and not directly installable. A clean build succeeded, but
+  the APK hash differs from the local-tree output; no bit-for-bit
+  reproducibility claim is made.
+- The source includes `.fdroid.yml`, an English store-listing draft, and the
+  launcher icon. No submission was made; F-Droid tooling/review, Android
+  screenshots, and device verification remain open.
 
 - r20 source commit `f42e642` includes plaintext-buffer zeroization on wallet
   persistence success and error paths. Web, Chrome MV3, and Android target 35
@@ -172,9 +184,9 @@ older `PDAO Wallet` Auth0 client was not modified.
   - Web ZIP SHA-256: `2f40abed373bae0963f75e27c3c36ad17847c4c3623706651bb5ce140dd33396`
   - Chrome ZIP SHA-256: `6163f3f28a328e68b0edceea49b13b262b4f35114290a080e924d668f6691185`
   - Android debug APK SHA-256: `68776f3b220cb4331fb90ec291c3d79ff3d56914e070f81116a544525411a94e`
-- Android remains a debug APK using target SDK 35, not a release-signed
-  F-Droid build. Browser installation, hardware-wallet and biometric/passkey
-  journeys remain open work.
+- Android debug APK builds remain available; the separate release candidate is
+  unsigned for F-Droid's central-signing path. Browser installation,
+  hardware-wallet, and biometric/passkey journeys remain open work.
 
 - r14 is deployed to Amplify app `d2iwf2bo6lci0r` in `us-east-1` by job `8`
   (SUCCEED, 2026-11-19). The public page and `/pdao-config.js` both returned
@@ -210,8 +222,8 @@ older `PDAO Wallet` Auth0 client was not modified.
    cross-currency PDAO conversion and treasury settlement.
 6. Complete responsive/accessibility review across every section and
    360/390/768/1024/1440 widths.
-7. Finish Chrome installation review; F-Droid metadata, release signing,
-   reproducible build, and emulator/device validation.
+7. Finish Chrome installation review; validate F-Droid metadata with its
+   tooling, provide Android screenshots, and complete emulator/device review.
 
 See [product roadmap](product-roadmap.md), [identity design](identity-and-agent-auth.md),
 [PRD](prd.md), and [release handoff](release-handoff.md) for details.

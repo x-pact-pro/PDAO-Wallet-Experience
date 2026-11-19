@@ -44,8 +44,9 @@
 - [x] Chrome MV3 build and reproducible ZIP artifact. Browser installation review remains open.
 - [x] Capacitor Android app shell, Android MWA registration, SDK debug build, and APK checksum.
 - [x] F-Droid metadata draft and source-vendored Gradle recipe; Android release build succeeded from a clean clone.
+- [x] Add English store listing draft and launcher icon to source.
 - [ ] Validate with F-Droid tooling, complete maintainer review/eligibility, and submit.
-- [ ] F-Droid main-repository eligibility/maintainer review, app icon and screenshots, plus emulator/device check.
+- [ ] Capture Android device screenshots; complete F-Droid tooling/maintainer review and emulator/device check.
 - [x] Public GitHub source repository.
 - [x] AWS Amplify deployment in `us-east-1` on a new app ID; GitHub Pages remains a secondary preview and the existing wallet domain is untouched.
 

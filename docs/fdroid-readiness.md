@@ -21,6 +21,9 @@ reproducibility claim or an F-Droid build-server run.
 
 - Package ID: `org.privatedao.wallet`.
 - Minimum SDK 24, target SDK 35, compile SDK 36.
+- The source includes an English app listing draft and launcher icon under
+  `fastlane/metadata/android/en-US/`. Store screenshots still need review and
+  capture from an Android device/emulator.
 - The debug APK remains available for device installation. The release APK is
   unsigned (`app-release-unsigned.apk`); it is not directly installable. F-Droid
   signs accepted builds centrally.

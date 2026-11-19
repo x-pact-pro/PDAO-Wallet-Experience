@@ -1,1 +1,1 @@
-A considered self-custody wallet with live markets and private payment quotes.
+A self-custody wallet for on-chain assets, markets, and payments.

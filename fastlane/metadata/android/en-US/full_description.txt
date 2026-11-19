@@ -1,7 +1,9 @@
-PrivateDAO Wallet brings your digital-asset workspace into a calm, carefully designed experience.
+PrivateDAO Wallet brings on-chain assets and financial activity into one considered workspace.
 
-Explore live market prices, discover movement across tracked assets, and browse the PrivateDAO Agent Exchange catalog. Create or restore a recovery phrase on your device and encrypt it locally with a passphrase.
+• Create or restore a wallet. Recovery phrases are encrypted locally with your passphrase.
+• Connect compatible wallets available in your browser or Android wallet environment.
+• View supported network balances, market prices, and price movements.
+• Review and authorize transactions with your wallet before they are submitted.
+• Explore PrivatePAY and Agent Exchange services where available.
 
-PrivatePAY can request the current payment requirements from Agent Exchange and show the provider response for review. The app does not claim a payment was sent unless a future release implements and confirms the complete wallet-authorized settlement flow.
-
-The Android application is built from the public source with Capacitor. Market and service data are fetched from their named providers. Wallet recovery phrases are not sent to those providers.
+Recovery phrases and private keys are not sent to PDAO services. Live balances, prices, and remote services require network access and depend on supported networks and providers.
