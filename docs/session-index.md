@@ -1,6 +1,6 @@
 # PDAO Wallet session index
 
-Updated: 2026-11-19. This index reconciles the original brief with the current
+Updated: 2026-11-19 (r14). This index reconciles the original brief with the current
 independent product, repositories, deployed AWS resources, and verified gaps.
 It is a navigation/handoff aid, not proof that unfinished product features are
 complete.
@@ -72,24 +72,26 @@ GitHub Pages is a secondary preview. Vercel is not the production target.
 - Pump.fun, Moonshot, and other meme-venue connections are not live trading
   integrations yet. A DApp link is not an agent execution result.
 
-## Current handoff (r13 deployed)
+## Current handoff (r14 deployed)
 
-- r13 is deployed to Amplify app `d2iwf2bo6lci0r` in `us-east-1` by job `7`
+- r14 is deployed to Amplify app `d2iwf2bo6lci0r` in `us-east-1` by job `8`
   (SUCCEED, 2026-11-19). The public page and `/pdao-config.js` both returned
-  HTTP 200; runtime config includes the Virginia agent gateway.
-- The current r13 design pass replaces the alpha hero’s decorative curve with
-  the live 7-day series and a labeled 24-hour move, fixes the clipped chart on
-  phone, expands the overview watchlist across the content width, and improves
-  mobile reading sizes. Web, Chrome, and Android builds succeeded on Node
-  26.13.1; source commit `b6eb445` is pushed and r13 is live.
-- Current r13 artifacts are under
+  HTTP 200; runtime config includes the Virginia agent gateway. The published
+  app bundle includes the r14 native transfer flow.
+- r13 added the live alpha movement card and mobile layout refinements. r14 adds
+  native SOL and ETH sends for locally held and connected wallets: exact address
+  validation, on-chain balance and fee estimate, local or wallet-provider
+  approval, submission, and confirmation tracking. The wallet, Chrome MV3, and
+  Android debug builds succeeded; source commit `f6da731` is pushed. No funded
+  Mainnet send was performed, so transaction execution remains unverified.
+- Current r14 artifacts are under
   `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/`:
-  - Web ZIP SHA-256: `143f1217a24c94dee641fc8bf65ce752c96fbfa445227316de8085d67a843845`
-  - Chrome ZIP SHA-256: `2731df07d0d1eefdeac0770f3c441b0bd764d44b4dd30076116c5283b2700621`
-  - Android debug APK SHA-256: `87382097b455679a98364b6fdfda1665a69f0fe59266bcb019ae8d6c293362d9`
+  - Web ZIP SHA-256: `5e103a2a9c64c79c570431daf95f67d400ac5c7f43a62f1a50f519d622869938`
+  - Chrome ZIP SHA-256: `061d7ae79bd52f1de05600000e213eca138297c580614d3314ef298aa56a0f52`
+  - Android debug APK SHA-256: `8bdf112ebc4d1fe1aadbbebac625a47eb95f2e2de58a2c3b167c5aa4d9105a8a`
 - Android uses `targetSdkVersion = 35`, `compileSdkVersion = 36`, and the new
   repo's Gradle project. It is a debug APK, not a release/F-Droid build.
-- The currently published UI is r13. Descope gateway deployment is live;
+- The currently published UI is r14. Descope gateway deployment is live;
   Descope Resource/client grants and scoped-token verification remain pending.
 
 ## Remaining work, in priority order

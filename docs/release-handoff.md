@@ -2,6 +2,28 @@
 
 ## Current source and infrastructure status — 2026-11-19
 
+### r14 — native SOL and ETH sends
+
+Source commit: `f6da731` on `main`; deployed on AWS Amplify Virginia
+(`us-east-1`) with job `8` (`SUCCEED`). The application root and runtime
+configuration returned HTTP 200, and the published application JavaScript
+contains the native transfer workflow.
+
+The shared Wallets screen now supports native SOL and ETH sends from locally
+encrypted wallets and connected wallet providers. It checks the destination,
+network, balance and current fee estimate, requires local signing or wallet
+provider approval, broadcasts through public RPC endpoints, and waits for an
+on-chain confirmation/receipt. No funded Mainnet transaction or Android device
+transaction was performed; this release verifies compilation and deployment,
+not a successful transfer.
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Web-0.1.0-20261119-r14.zip` | `5e103a2a9c64c79c570431daf95f67d400ac5c7f43a62f1a50f519d622869938` | Amplify job `8` deployed; live bundle verified |
+| `PDAO-Wallet-Chrome-0.1.0-20261119-r14.zip` | `061d7ae79bd52f1de05600000e213eca138297c580614d3314ef298aa56a0f52` | Chrome MV3 production build |
+| `PDAO-Wallet-Android-debug-0.1.0-20261119-r14.apk` | `8bdf112ebc4d1fe1aadbbebac625a47eb95f2e2de58a2c3b167c5aa4d9105a8a` | Android SDK 35 debug build; not release-signed or F-Droid-ready |
+
+
 The product in this repository is the new Wallet Atelier project, separate from
 the existing wallet in `x-pact-pro/PDAO-Wallet`. Its production web deployment
 is AWS Amplify app `d2iwf2bo6lci0r` in `us-east-1` at
@@ -9,7 +31,7 @@ https://main.d2iwf2bo6lci0r.amplifyapp.com/. This supersedes the earlier r7
 handoff statement that the new app had no production URL. Vercel is not the
 deployment target. GitHub Pages is a secondary preview only.
 
-Latest packaged artifacts for the r13 design pass (built on Node 26.13.1;
+Previous packaged artifacts for the r13 design pass (built on Node 26.13.1;
 web deployed to Amplify job `7`, status `SUCCEED`, in `us-east-1`):
 
 | Artifact | SHA-256 | State |
@@ -24,7 +46,7 @@ A separate Descope agent identity gateway is deployed from
 200 and `GET /v1/agent/identity` returned 401 without a token. The Descope
 Resource and agent clients are not yet configured, so a valid scoped token has
 not been accepted. The gateway status UI remains explicit about the pending Descope Resource/client
-grants. r13 is live at https://main.d2iwf2bo6lci0r.amplifyapp.com/; the root page and `/pdao-config.js` both returned HTTP 200.
+grants. r14 is live at https://main.d2iwf2bo6lci0r.amplifyapp.com/; the root page and `/pdao-config.js` both returned HTTP 200.
 
 For the complete project map and remaining objective checklist, see
 [`session-index.md`](session-index.md).

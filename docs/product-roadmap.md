@@ -11,7 +11,7 @@
 - [x] Generate/import BIP39 recovery phrases; derive Solana and EVM addresses; encrypt the phrase locally with WebCrypto; verify the passphrase.
 - [x] Discover injected Solana wallets and register Android Mobile Wallet Adapter through Wallet Standard.
 - [x] Read native SOL and ETH balances for local and connected addresses on the explicit Solana and Ethereum mainnets, with partial and unavailable states.
-- [ ] Send native assets with exact local signing and chain confirmation.
+- [ ] Send native assets with exact local signing and chain confirmation (SOL/ETH flows are implemented in r14; a funded Mainnet transaction and Android device confirmation remain unverified).
 - [x] Read SPL Token and Token-2022 balances for Solana wallets with partial RPC coverage states; unknown mints are shown by address and are not assigned names or prices.
 
 ## Phase 3 — Live intelligence
