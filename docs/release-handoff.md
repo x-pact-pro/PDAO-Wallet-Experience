@@ -1,5 +1,34 @@
 # Release handoff
 
+## r28 — published Agent Exchange service routes
+
+Source commit `63d4519cb98f441e990a4ea86622af9772d12066` adds safe links from
+service cards to the Agent Exchange catalog's published HTTPS route when the
+provider supplies `public_url`; cards without a valid HTTPS URL remain visibly
+unpublished. No wallet key, signing authority, Descope token, or settlement
+permission is sent to a provider.
+
+The new Wallet Atelier web build was manually deployed to Amplify app
+`d2iwf2bo6lci0r` in `us-east-1` as job `46`; both DEPLOY and VERIFY succeeded.
+The public root returned HTTP 200 and the served bundle contains the route-link
+implementation. The Stockholm Agent Exchange Lambda and repository were not
+modified.
+
+The r28 handoff artifacts are in
+`/home/x-pact/Desktop/PDAO-Wallet-Deliverables/r28-0.1.1/`:
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Android-debug-0.1.1-20261120-r28.apk` | `46a3efa4f3d12b10ebc005385e90ae9d6b78c656a59c3c8bc9914a6eaa0bfb7d` | Target SDK 35 debug build; ADB device was unavailable during this pass |
+| `PDAO-Wallet-Android-release-unsigned-0.1.1-20261120-r28.apk` | `16fce7baf637c63dd9ead2b12202276e485c5beb5ec5ebcc1c67a3dd38f49b69` | Target SDK 35 unsigned release build for F-Droid signing |
+| `PDAO-Wallet-Chrome-0.1.1-20261120-r28.zip` | `a8f61bc3de708af064df2e7c8b2185f0600e7d1d8060aafa5a53c766c54f29f4` | MV3 extension package; build passed |
+
+`npm run build`, `npm run lint`, `npm run build:extension`, Android asset sync,
+offline Gradle debug/release builds, and `git diff --check` passed. Lint still
+reports existing warnings from generated/vendor files and React purity rules;
+there are no lint errors. No funded Mainnet transaction, Descope scoped-token
+acceptance, Chrome Web Store publication, or F-Droid acceptance is claimed.
+
 ## r27 — live Team Bot route discovery
 
 The Team Bots workspace now consumes the live Agent Exchange catalog when it
