@@ -514,3 +514,15 @@ were probed against live Solana and Ethereum RPC endpoints without signing or
 submitting transactions. Public RPCs are rate-limited and have no production
 SLA. No emulator/device was attached, so UI balance rendering and Android MWA
 remain unverified on a physical device.
+
+## Build r29 — Agent Exchange service execution surface
+
+This build adds a live service detail journey backed by the published Agent
+Exchange contract: JSON input validation at the UI boundary, free-service job
+creation, paid exact-quote creation, bounded job-status polling, and receipt
+links when the provider returns one. Paid requests remain quote-first; this
+change does not sign, settle, or claim funded payment evidence.
+
+The web deployment target remains the new Amplify application in `us-east-1`.
+The Stockholm Agent Exchange Lambda is an external provider and was not
+modified.

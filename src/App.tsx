@@ -13,7 +13,7 @@ import { connectEvmWallet, connectSolanaWallet, discoverEvmWallets, discoverSola
 import {
   Activity, ArrowDownLeft, ArrowLeftRight, ArrowRight, ArrowUpRight,
   Bot, ChevronDown, CircleHelp, Command, Compass, ExternalLink,
-  Eye, EyeOff, Fingerprint, LayoutDashboard, LockKeyhole, Menu,
+  Eye, EyeOff, FileJson, Fingerprint, LayoutDashboard, LockKeyhole, Menu,
   MessageCircle, PanelLeftClose, Plus, RefreshCw, Search, ShieldCheck,
   Sparkles, Star, Trash2, Wallet, X,
   type LucideIcon,
@@ -26,7 +26,8 @@ import './Ask.css'
 type Section = 'overview' | 'markets' | 'trade' | 'alpha' | 'exchange' | 'wallet' | 'bots' | 'payments' | 'identity' | 'ask'
 type Market = { id: string; symbol: string; name: string; image: string; price: number; change: number; volume: number; sparkline?: number[] }
 type NetworkStatus = { network: string; label?: string; status: string; latency_ms?: number; provider?: string; cluster?: string; block_number?: string }
-type Service = { id?: string; name?: string; title?: string; description?: string; summary?: string; category?: string; price?: number | string; currency?: string; pricing?: unknown; public_url?: string }
+type Service = { id?: string; name?: string; title?: string; description?: string; summary?: string; category?: string; price?: number | string; currency?: string; pricing?: unknown; public_url?: string; input?: string; input_schema?: Record<string, unknown>; input_requirements?: Record<string, unknown>; free?: boolean; status?: string; execution?: string }
+type AgentJob = { id?: string; job_id?: string; status?: string; state?: string; receipt_id?: string; payment_intent?: unknown; result?: unknown; error?: string; [key: string]: unknown }
 type PrivatePayAccept = { scheme?: string; network?: string; asset?: string; amount?: string; payTo?: string; maxTimeoutSeconds?: number; extra?: Record<string, unknown> }
 type PrivatePayQuote = { request_id?: string; expires_at?: string; requirements?: { accepts?: PrivatePayAccept[]; resource?: { url?: string; description?: string; mimeType?: string } }; pdao?: { required?: boolean; selected?: boolean; status?: string }; public_disclosure?: string; provider_disclosure?: string }
 type PrivatePayPreparedResponse = { transaction_base64?: string; version?: 'legacy' | 'v0'; send_to?: 'base' | 'ephemeral'; required_signers?: string[]; recent_blockhash?: string; last_valid_block_height?: number; instruction_count?: number; provider_fees?: { lamports?: string; tokens?: string } | null; privacy_boundary?: string }
@@ -751,13 +752,58 @@ function Alpha({ prices, state, onNavigate }: { prices: Market[]; state: string;
 
 function Exchange({ services, state, query, setQuery, category, setCategory, refresh }: { services: Service[]; state: string; query: string; setQuery: (s: string) => void; category: string; setCategory: (s: string) => void; refresh: () => void }) {
   const categories = ['All services','Verification','Intelligence','Risk','Agent Services','Transactions','Financial Services']
-  return <div className="exchange-page"><section className="exchange-hero"><div className="exchange-hero-copy"><span className="exchange-status"><i className={state === 'live' ? 'is-live' : ''} />{state === 'live' ? 'CONNECTED TO AGENT EXCHANGE' : state === 'loading' ? 'CONNECTING TO AGENT EXCHANGE' : 'AGENT EXCHANGE UNAVAILABLE'}</span><h2>Real services.<br /><em>Inside your wallet.</em></h2><p>Explore live capabilities and published prices. Use your wallet to authorize any payment.</p><div className="exchange-capabilities"><span><ShieldCheck size={14} /> Read-only tools</span><i /> <span><LockKeyhole size={14} /> PrivatePAY x402</span><i /> <span><Activity size={14} /> Live catalog</span></div></div><div className="exchange-orbit"><div className="exchange-orbit-ring ring1" /><div className="exchange-orbit-ring ring2" /><div className="exchange-core"><Mark size={42} /></div><div className="orbit-token token-a"><ShieldCheck size={15} /></div><div className="orbit-token token-b"><Command size={15} /></div><div className="orbit-token token-c"><Activity size={15} /></div></div></section><div className="catalog-toolbar"><div className="catalog-count"><span className="eyebrow-dot" /><b>{state === 'live' ? services.length : '—'}</b> live services <button className="refresh-inline" onClick={refresh}><RefreshCw size={13} /> Refresh</button></div><div className="catalog-search"><Search size={16} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Describe what you need or filter services" /></div><div className="category-scroll">{categories.map(tab => <button key={tab} className={tab === category ? 'chosen' : ''} onClick={() => setCategory(tab)}>{tab}</button>)}</div></div>{state === 'live' ? <div className="service-grid">{services.map((service, index) => <ServiceCard key={service.id ?? index} service={service} />)}{!services.length && <div className="table-empty">No live services match this filter.</div>}</div> : <div className="service-empty card-surface"><Compass size={25} /><b>{state === 'loading' ? 'Loading live service catalog' : 'Could not reach the live catalog'}</b><p>Catalog details and prices are provided by Agent Exchange.</p><button className="button-secondary" onClick={refresh}><RefreshCw size={14} /> Try again</button></div>}</div>
+  const agentOrigin = 'https://agents.privatedao.org'
+  const [selected, setSelected] = useState<Service | null>(null)
+  const [inputText, setInputText] = useState('{\n  "record": {}\n}')
+  const [job, setJob] = useState<AgentJob | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const jobId = typeof job?.id === 'string' ? job.id : typeof job?.job_id === 'string' ? job.job_id : ''
+  const paid = selected ? Number(selected.price ?? 0) > 0 && selected.free !== true : false
+
+  const selectService = (service: Service) => {
+    setSelected(service)
+    setJob(null)
+    setError('')
+    const schema = service.input_schema as { properties?: Record<string, unknown> } | undefined
+    const properties = schema?.properties ? Object.keys(schema.properties) : []
+    const first = properties[0]
+    setInputText(first === 'network' ? '{\n  "network": "solana-mainnet-beta"\n}' : first ? `{\n  "${first}": ""\n}` : '{\n  "record": {}\n}')
+  }
+
+  const createJob = async () => {
+    if (!selected?.id) return
+    setBusy(true)
+    setError('')
+    try {
+      let input: unknown
+      try { input = JSON.parse(inputText) } catch { throw new Error('Input must be valid JSON.') }
+      const response = await fetch(`${agentOrigin}/api/jobs`, { method: 'POST', headers: { accept: 'application/json', 'content-type': 'application/json' }, body: JSON.stringify({ service_id: selected.id, input }) })
+      const data = await response.json().catch(() => ({})) as AgentJob
+      if (!response.ok) throw new Error(data.error || `Agent Exchange returned ${response.status}`)
+      setJob(data)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'The service could not be started.') }
+    finally { setBusy(false) }
+  }
+
+  useEffect(() => {
+    if (!jobId || !job || ['completed', 'failed', 'cancelled', 'recovery_required'].includes(String(job.status ?? job.state).toLowerCase())) return
+    const timer = window.setInterval(() => {
+      void fetch(`${agentOrigin}/api/jobs/${encodeURIComponent(jobId)}`, { headers: { accept: 'application/json' } }).then(async response => {
+        const data = await response.json().catch(() => ({})) as AgentJob
+        if (response.ok) setJob(data)
+      }).catch(() => undefined)
+    }, 4000)
+    return () => window.clearInterval(timer)
+  }, [agentOrigin, job, jobId])
+
+  return <div className="exchange-page"><section className="exchange-hero"><div className="exchange-hero-copy"><span className="exchange-status"><i className={state === 'live' ? 'is-live' : ''} />{state === 'live' ? 'CONNECTED TO AGENT EXCHANGE' : state === 'loading' ? 'CONNECTING TO AGENT EXCHANGE' : 'AGENT EXCHANGE UNAVAILABLE'}</span><h2>Real services.<br /><em>Inside your wallet.</em></h2><p>Explore live capabilities and published prices. Use your wallet to authorize any payment.</p><div className="exchange-capabilities"><span><ShieldCheck size={14} /> Read-only tools</span><i /> <span><LockKeyhole size={14} /> PrivatePAY x402</span><i /> <span><Activity size={14} /> Live catalog</span></div></div><div className="exchange-orbit"><div className="exchange-orbit-ring ring1" /><div className="exchange-orbit-ring ring2" /><div className="exchange-core"><Mark size={42} /></div><div className="orbit-token token-a"><ShieldCheck size={15} /></div><div className="orbit-token token-b"><Command size={15} /></div><div className="orbit-token token-c"><Activity size={15} /></div></div></section><div className="catalog-toolbar"><div className="catalog-count"><span className="eyebrow-dot" /><b>{state === 'live' ? services.length : '—'}</b> live services <button className="refresh-inline" onClick={refresh}><RefreshCw size={13} /> Refresh</button></div><div className="catalog-search"><Search size={16} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Describe what you need or filter services" /></div><div className="category-scroll">{categories.map(tab => <button key={tab} className={tab === category ? 'chosen' : ''} onClick={() => setCategory(tab)}>{tab}</button>)}</div></div>{selected && <section className="service-detail card-surface"><div className="service-detail-head"><div><span className="small-label">SELECTED LIVE CAPABILITY</span><h2>{selected.title ?? selected.name ?? selected.id}</h2><p>{selected.summary ?? selected.description ?? 'A live capability from the PDAO Agent Exchange.'}</p></div><button className="icon-button" onClick={() => setSelected(null)} aria-label="Close service details"><X size={16} /></button></div><div className="service-detail-meta"><span><b>{selected.id}</b> · {selected.category ?? 'PDAO service'}</span><span>{paid ? `Published ${selected.price} ${selected.currency ?? 'USDC'}` : 'Free service'}</span><span>{selected.input ?? 'JSON input'}</span></div><div className="service-run-grid"><div><label className="service-json-label"><FileJson size={14} /> Service input JSON<textarea value={inputText} onChange={event => setInputText(event.target.value)} spellCheck={false} /></label><p className="service-schema-hint">Use the published input contract for this route. The wallet sends only this JSON and never sends recovery phrases or private keys.</p></div><div className="service-run-side"><div className="service-run-note"><ShieldCheck size={16} /><span><b>{paid ? 'Quote first' : 'Read-only execution'}</b><small>{paid ? 'Creates an exact unpaid job/quote. Payment and signing remain separate, explicit steps.' : 'Runs the selected free capability and tracks its provider status.'}</small></span></div><button className="button-primary" onClick={() => void createJob()} disabled={busy || !selected.id}>{busy ? 'Starting…' : paid ? 'Create exact quote' : 'Run free service'}<ArrowRight size={15} /></button>{error && <div className="form-error" role="alert">{error}</div>}{job && <div className="service-job-status"><span className="small-label">JOB STATUS</span><b>{String(job.status ?? job.state ?? 'created').replaceAll('_', ' ')}</b>{jobId && <code>{jobId}</code>}{job.receipt_id && <a href={`${agentOrigin}/api/receipts/${encodeURIComponent(job.receipt_id)}`} target="_blank" rel="noreferrer">Open receipt <ExternalLink size={12} /></a>}<details><summary>Provider response</summary><pre>{JSON.stringify(job, null, 2)}</pre></details></div>}</div></div></section>}{state === 'live' ? <div className="service-grid">{services.map((service, index) => <ServiceCard key={service.id ?? index} service={service} onSelect={selectService} />)}{!services.length && <div className="table-empty">No live services match this filter.</div>}</div> : <div className="service-empty card-surface"><Compass size={25} /><b>{state === 'loading' ? 'Loading live service catalog' : 'Could not reach the live catalog'}</b><p>Catalog details and prices are provided by Agent Exchange.</p><button className="button-secondary" onClick={refresh}><RefreshCw size={14} /> Try again</button></div>}</div>
 }
-function ServiceCard({ service }: { service: Service }) {
+function ServiceCard({ service, onSelect }: { service: Service; onSelect: (service: Service) => void }) {
   const title = service.title ?? service.name ?? service.id ?? 'PDAO service'
   const price = typeof service.price === 'number' ? `${service.price} ${service.currency ?? 'USDC'}` : typeof service.price === 'string' ? service.price : 'See provider quote'
   const href = typeof service.public_url === 'string' && /^https:\/\//i.test(service.public_url) ? service.public_url : undefined
-  return <article className="service-card card-surface"><div className="service-card-top"><span className="service-icon"><Command size={20} /></span><span className="service-category">{service.category ?? 'PDAO SERVICE'}</span></div><code>{service.id ?? 'agent.service'}</code><h3>{title}</h3><p>{service.summary ?? service.description ?? 'A live capability from the PDAO Agent Exchange.'}</p><div className="service-card-footer"><span>Published price <b>{price}</b></span>{href ? <a className="service-card-link" href={href} target="_blank" rel="noopener noreferrer" aria-label={`View ${title}`}><ArrowUpRight size={17} /></a> : <span className="service-card-link is-unavailable" aria-label="Service link unavailable"><ArrowUpRight size={17} /></span>}</div></article>
+  return <article className="service-card card-surface"><button className="service-card-main" onClick={() => onSelect(service)}><div className="service-card-top"><span className="service-icon"><Command size={20} /></span><span className="service-category">{service.category ?? 'PDAO SERVICE'}</span></div><code>{service.id ?? 'agent.service'}</code><h3>{title}</h3><p>{service.summary ?? service.description ?? 'A live capability from the PDAO Agent Exchange.'}</p></button><div className="service-card-footer"><span>Published price <b>{price}</b></span><div className="service-card-actions"><button className="service-card-link" onClick={() => onSelect(service)} aria-label={`Open ${title}`}><ArrowRight size={15} /></button>{href ? <a className="service-card-link" href={href} target="_blank" rel="noopener noreferrer" aria-label={`View public ${title}`}><ArrowUpRight size={17} /></a> : <span className="service-card-link is-unavailable" aria-label="Service link unavailable"><ArrowUpRight size={17} /></span>}</div></div></article>
 }
 
 function Wallets({ onToast, standardWallets, evmProviders, connectedWallets, onConnectSolana, onConnectEvm, onDisconnectExternal, onRescanWallets }: { onToast: (s: string) => void; standardWallets: readonly StandardWallet[]; evmProviders: EvmProviderOption[]; connectedWallets: ConnectedExternalWallet[]; onConnectSolana: (wallet: StandardWallet) => void; onConnectEvm: (provider: EvmProviderOption) => void; onDisconnectExternal: (id: string) => void; onRescanWallets: () => void }) {
