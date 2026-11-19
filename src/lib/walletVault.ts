@@ -1,7 +1,7 @@
 import { getPublicKeyAsync } from '@noble/ed25519'
 import bs58 from 'bs58'
 import { mnemonicToSeed } from '@scure/bip39'
-import { HDNodeWallet } from 'ethers'
+import { HDNodeWallet, type TransactionRequest } from 'ethers'
 import { derivePath } from 'ed25519-hd-key'
 import { Keypair, Transaction, VersionedTransaction } from '@solana/web3.js'
 import { checkRecoveryPhrase } from './mnemonic'
@@ -192,6 +192,13 @@ export async function signPreparedSolanaTransaction(
     signerSecret?.fill(0)
     derivedSeed.fill(0)
   }
+}
+
+export async function signNativeEvmTransaction(record: WalletRecord, passphrase: string, transaction: TransactionRequest): Promise<string> {
+  const phrase = await decryptWalletPhrase(record, passphrase)
+  const signer = HDNodeWallet.fromPhrase(phrase, undefined, "m/44'/60'/0'/0/0")
+  if (signer.address.toLowerCase() !== record.evmAddress.toLowerCase()) throw new Error('The unlocked wallet does not match the selected EVM address.')
+  return signer.signTransaction(transaction)
 }
 
 export async function listWallets(): Promise<WalletRecord[]> {

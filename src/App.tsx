@@ -3,7 +3,8 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import PersonaReact from 'persona-react'
-import { VersionedTransaction } from '@solana/web3.js'
+import { PublicKey, SystemProgram, Transaction, VersionedTransaction } from '@solana/web3.js'
+import { formatEther, getAddress } from 'ethers'
 import type { Wallet as StandardWallet } from '@wallet-standard/base'
 import { checkRecoveryPhrase, createRecoveryPhrase } from './lib/mnemonic'
 import type { PreparedSolanaTransaction, WalletRecord } from './lib/walletVault'
@@ -399,6 +400,148 @@ function formatTokenAmount(value: string | undefined, decimals: number): string 
   return fraction ? `${whole}.${fraction}` : whole.toString()
 }
 
+type TransferAccount = { id: string; chain: 'solana' | 'evm'; name: string; address: string; local?: WalletRecord; external?: ConnectedExternalWallet }
+const transferSolanaRpc = ['https://api.mainnet.solana.com', 'https://solana-rpc.publicnode.com']
+const transferEvmRpc = ['https://cloudflare-eth.com', 'https://ethereum-rpc.publicnode.com']
+
+async function transferRpc<T>(endpoints: string[], method: string, params: unknown[]): Promise<T> {
+  let lastError: Error | undefined
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }), signal: AbortSignal.timeout(12000) })
+      const body = await response.json() as { result?: T; error?: { message?: string } }
+      if (!response.ok || body.error || body.result === undefined) throw new Error(body.error?.message ?? `Network RPC returned HTTP ${response.status}.`)
+      return body.result
+    } catch (reason) { lastError = reason instanceof Error ? reason : new Error('Network RPC unavailable.') }
+  }
+  throw lastError ?? new Error('Network RPC unavailable.')
+}
+
+function parseNativeAmount(value: string, decimals: number): bigint {
+  if (!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value.trim())) throw new Error('Enter a valid positive amount.')
+  const [whole, fraction = ''] = value.trim().split('.')
+  if (fraction.length > decimals) throw new Error(`Use no more than ${decimals} decimal places.`)
+  const amount = BigInt(whole) * 10n ** BigInt(decimals) + BigInt((fraction + '0'.repeat(decimals)).slice(0, decimals) || '0')
+  if (amount <= 0n) throw new Error('Enter a positive amount.')
+  return amount
+}
+
+function SendNative({ records, connectedWallets }: { records: WalletRecord[]; connectedWallets: ConnectedExternalWallet[] }) {
+  const accounts: TransferAccount[] = [
+    ...records.flatMap(local => [{ id: `local:sol:${local.id}`, chain: 'solana' as const, name: 'PrivateDAO · Solana', address: local.solanaAddress, local }, { id: `local:evm:${local.id}`, chain: 'evm' as const, name: 'PrivateDAO · Ethereum', address: local.evmAddress, local }]),
+    ...connectedWallets.filter((wallet): wallet is Extract<ConnectedExternalWallet, { chain: 'solana' }> => wallet.chain === 'solana').map(external => ({ id: external.id, chain: 'solana' as const, name: `${external.name} · Solana`, address: external.address, external })),
+    ...connectedWallets.filter((wallet): wallet is Extract<ConnectedExternalWallet, { chain: 'evm' }> => wallet.chain === 'evm').map(external => ({ id: external.id, chain: 'evm' as const, name: `${external.name} · Ethereum`, address: external.address, external })),
+  ]
+  const [accountId, setAccountId] = useState('')
+  const [recipient, setRecipient] = useState('')
+  const [amount, setAmount] = useState('')
+  const [passphrase, setPassphrase] = useState('')
+  const [review, setReview] = useState<{ fee: string; gasLimit?: bigint; gasPrice?: bigint; nonce?: bigint; blockhash?: string; lastValidBlockHeight?: number } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [signature, setSignature] = useState('')
+  const selected = accounts.find(item => item.id === accountId) ?? accounts[0]
+
+  const prepare = async () => {
+    setBusy(true); setError(''); setReview(null); setSignature('')
+    try {
+      if (!selected) throw new Error('Create or connect a wallet to send assets.')
+      if (selected.chain === 'evm' && selected.external?.chain === 'evm' && selected.external.chainId.toLowerCase() !== '0x1') throw new Error('Switch the connected wallet to Ethereum Mainnet before sending ETH.')
+      const amountRaw = parseNativeAmount(amount, selected.chain === 'solana' ? 9 : 18)
+      if (selected.chain === 'solana') {
+        const to = new PublicKey(recipient.trim())
+        const { blockhash, lastValidBlockHeight } = await transferRpc<{ blockhash: string; lastValidBlockHeight: number }>(transferSolanaRpc, 'getLatestBlockhash', [{ commitment: 'confirmed' }])
+        const transaction = new Transaction({ feePayer: new PublicKey(selected.address), recentBlockhash: blockhash as Transaction['recentBlockhash'] }).add(SystemProgram.transfer({ fromPubkey: new PublicKey(selected.address), toPubkey: to, lamports: amountRaw }))
+        const feeResponse = await transferRpc<{ value: number | null }>(transferSolanaRpc, 'getFeeForMessage', [BufferlessBase64(transaction.compileMessage().serialize()), { commitment: 'confirmed' }])
+        if (feeResponse.value === null) throw new Error('Solana did not return a current network fee estimate. Try reviewing the transfer again.')
+        const fee = BigInt(feeResponse.value)
+        const balance = BigInt(await transferRpc<number>(transferSolanaRpc, 'getBalance', [selected.address, { commitment: 'confirmed' }]))
+        if (balance < amountRaw + fee) throw new Error('The wallet balance does not cover the amount and network fee.')
+        setReview({ fee: `${Number(fee) / 1e9} SOL`, blockhash, lastValidBlockHeight })
+      } else {
+        if (!/^0x[\da-f]{40}$/i.test(recipient.trim())) throw new Error('Enter a valid Ethereum address.')
+        const to = getAddress(recipient.trim())
+        const value = `0x${amountRaw.toString(16)}`
+        const tx = { from: selected.address, to, value }
+        const gasHex = await (selected.external?.chain === 'evm' ? selected.external.provider.request({ method: 'eth_estimateGas', params: [tx] }) : transferRpc<string>(transferEvmRpc, 'eth_estimateGas', [tx])) as string
+        const gasPriceHex = await (selected.external?.chain === 'evm' ? selected.external.provider.request({ method: 'eth_gasPrice' }) : transferRpc<string>(transferEvmRpc, 'eth_gasPrice', [])) as string
+        const balanceHex = await (selected.external?.chain === 'evm' ? selected.external.provider.request({ method: 'eth_getBalance', params: [selected.address, 'latest'] }) : transferRpc<string>(transferEvmRpc, 'eth_getBalance', [selected.address, 'latest'])) as string
+        const nonceHex = await (selected.external?.chain === 'evm' ? selected.external.provider.request({ method: 'eth_getTransactionCount', params: [selected.address, 'pending'] }) : transferRpc<string>(transferEvmRpc, 'eth_getTransactionCount', [selected.address, 'pending'])) as string
+        const gasLimit = BigInt(gasHex) * 12n / 10n
+        const gasPrice = BigInt(gasPriceHex)
+        const fee = gasLimit * gasPrice
+        if (BigInt(balanceHex) < amountRaw + fee) throw new Error('The wallet balance does not cover the amount and estimated network fee.')
+        setReview({ fee: `${formatEther(fee)} ETH (estimate)`, gasLimit, gasPrice, nonce: BigInt(nonceHex) })
+      }
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not prepare this transfer.') }
+    finally { setBusy(false) }
+  }
+
+  const send = async () => {
+    if (!selected || !review) return
+    setBusy(true); setError('')
+    try {
+      const amountRaw = parseNativeAmount(amount, selected.chain === 'solana' ? 9 : 18)
+      if (selected.chain === 'solana') {
+        const currentBlockHeight = await transferRpc<number>(transferSolanaRpc, 'getBlockHeight', [{ commitment: 'confirmed' }])
+        if (currentBlockHeight > (review.lastValidBlockHeight ?? 0)) throw new Error('The Solana review expired. Request a fresh review before signing.')
+        const transaction = new Transaction({ feePayer: new PublicKey(selected.address), recentBlockhash: review.blockhash as Transaction['recentBlockhash'] }).add(SystemProgram.transfer({ fromPubkey: new PublicKey(selected.address), toPubkey: new PublicKey(recipient.trim()), lamports: amountRaw }))
+        const unsigned = await transaction.serialize({ requireAllSignatures: false, verifySignatures: false })
+        const prepared: PreparedSolanaTransaction = { transactionBase64: BufferlessBase64(unsigned), version: 'legacy', requiredSigners: [selected.address] }
+        const signed = selected.external?.chain === 'solana'
+          ? await signWithExternalSolanaWallet(selected.external, prepared)
+          : selected.local ? await (await import('./lib/walletVault')).signPreparedSolanaTransaction(selected.local, passphrase, prepared, selected.address) : (() => { throw new Error('No signer is available for this wallet.') })()
+        const wire = Uint8Array.from(atob(signed), char => char.charCodeAt(0))
+        const sig = await transferRpc<string>(transferSolanaRpc, 'sendTransaction', [BufferlessBase64(wire), { encoding: 'base64', preflightCommitment: 'confirmed', maxRetries: 2 }])
+        let confirmed = false
+        for (let attempt = 0; attempt < 20; attempt++) {
+          const status = await transferRpc<{ value: Array<{ confirmationStatus?: string; err?: unknown } | null> }>(transferSolanaRpc, 'getSignatureStatuses', [[sig], { searchTransactionHistory: true }])
+          const item = status.value[0]
+          if (item?.err) throw new Error('The Solana transaction failed on-chain.')
+          if (item?.confirmationStatus === 'confirmed' || item?.confirmationStatus === 'finalized') { confirmed = true; break }
+          await new Promise(resolve => window.setTimeout(resolve, 1500))
+        }
+        if (!confirmed) throw new Error(`Transaction submitted but confirmation is still pending. Signature: ${sig}`)
+        setSignature(sig)
+      } else {
+        const tx = { from: selected.address, to: getAddress(recipient.trim()), value: `0x${amountRaw.toString(16)}`, gas: `0x${review.gasLimit!.toString(16)}`, gasPrice: `0x${review.gasPrice!.toString(16)}`, chainId: '0x1' }
+        let hash: string
+        if (selected.external?.chain === 'evm') hash = String(await selected.external.provider.request({ method: 'eth_sendTransaction', params: [tx] }))
+        else if (selected.local) {
+          const raw = await (await import('./lib/walletVault')).signNativeEvmTransaction(selected.local, passphrase, { to: tx.to, value: tx.value, gasLimit: review.gasLimit, gasPrice: review.gasPrice, chainId: 1, nonce: Number(review.nonce) })
+          hash = await transferRpc<string>(transferEvmRpc, 'eth_sendRawTransaction', [raw])
+        } else throw new Error('No signer is available for this wallet.')
+        let receipt: { status?: string } | null = null
+        for (let attempt = 0; attempt < 30; attempt++) {
+          receipt = await transferRpc<{ status?: string } | null>(transferEvmRpc, 'eth_getTransactionReceipt', [hash])
+          if (receipt) break
+          await new Promise(resolve => window.setTimeout(resolve, 2000))
+        }
+        if (!receipt) throw new Error(`Transaction submitted but confirmation is still pending. Hash: ${hash}`)
+        if (receipt.status !== '0x1') throw new Error('The Ethereum transaction did not return a successful execution status.')
+        setSignature(hash)
+      }
+      setReview(null); setPassphrase(''); setAmount(''); setRecipient('')
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Transfer could not be confirmed.') }
+    finally { setBusy(false) }
+  }
+
+  return <section className="send-native card-surface"><div className="section-card-heading"><div><span className="small-label">NATIVE TRANSFER</span><h2>Send assets</h2></div><span className="heading-icon"><ArrowUpRight size={17} /></span></div>
+    {!accounts.length ? <div className="holdings-message">Create a local wallet or connect a Solana/EVM wallet to send native assets.</div> : <>
+      <label className="send-field">From wallet<select value={selected?.id ?? ''} onChange={event => { setAccountId(event.target.value); setReview(null) }}>{accounts.map(item => <option key={item.id} value={item.id}>{item.name} · {item.address.slice(0, 6)}…{item.address.slice(-4)}</option>)}</select></label>
+      <label className="send-field">Recipient address<input value={recipient} onChange={event => { setRecipient(event.target.value); setReview(null) }} placeholder={selected?.chain === 'solana' ? 'Solana address' : '0x…'} autoComplete="off" spellCheck={false} /></label>
+      <label className="send-field">Amount ({selected?.chain === 'solana' ? 'SOL' : 'ETH'})<input inputMode="decimal" value={amount} onChange={event => { setAmount(event.target.value); setReview(null) }} placeholder="0.00" /></label>
+      {selected?.local && <label className="send-field">Wallet passphrase<input type="password" autoComplete="current-password" value={passphrase} onChange={event => setPassphrase(event.target.value)} placeholder="Used locally to sign" /></label>}
+      {review && <div className="send-review"><span>Network <b>{selected?.chain === 'solana' ? 'Solana Mainnet' : 'Ethereum Mainnet'}</b></span><span>Amount <b>{amount} {selected?.chain === 'solana' ? 'SOL' : 'ETH'}</b></span><span>Recipient <code>{recipient}</code></span><span>Estimated network fee <b>{review.fee}</b></span><button className="button-primary" onClick={() => void send()} disabled={busy || Boolean(selected?.local && !passphrase)}>{busy ? 'Waiting for network confirmation…' : 'Confirm and send'} <ArrowUpRight size={15} /></button></div>}
+      {error && <p className="send-error" role="alert">{error}</p>}
+      {signature && <div className="send-success"><b>Transfer confirmed on {selected?.chain === 'solana' ? 'Solana' : 'Ethereum'} Mainnet</b><a href={selected?.chain === 'solana' ? `https://solscan.io/tx/${signature}` : `https://etherscan.io/tx/${signature}`} target="_blank" rel="noreferrer">View transaction · {signature.slice(0, 12)}… <ExternalLink size={13} /></a></div>}
+      {!review && !signature && <button className="button-primary send-prepare" onClick={() => void prepare()} disabled={busy || !recipient.trim() || !amount.trim() || Boolean(selected?.local && !passphrase)}>{busy ? 'Checking balance and network fee…' : 'Review transfer'} <ArrowRight size={15} /></button>}
+    </>}
+  </section>
+}
+
+function BufferlessBase64(bytes: Uint8Array): string { let binary = ''; bytes.forEach(byte => { binary += String.fromCharCode(byte) }); return btoa(binary) }
+
 function Trade({ prices, amount, setAmount, onToast, connectedWallets, onNavigate }: { prices: Market[]; amount: string; setAmount: (s: string) => void; onToast: (s: string) => void; connectedWallets: ConnectedExternalWallet[]; onNavigate: (section: Section) => void }) {
   const [from, setFrom] = useState<'SOL' | 'USDC'>('SOL')
   const [to, setTo] = useState<'SOL' | 'USDC'>('USDC')
@@ -566,6 +709,7 @@ function Wallets({ onToast, standardWallets, evmProviders, connectedWallets, onC
   }
 
   return <div className="wallets-layout"><section className="wallet-intro card-surface"><div className="wallet-emblem"><Mark size={50} /></div><span className="small-label">SELF CUSTODY, MADE CLEAR</span><h2>{records.length ? 'Your wallet is yours.' : 'Begin with your own keys.'}</h2><p>Create a new wallet on this device or restore one you already control. Your recovery phrase is encrypted locally with your passphrase and never sent to a server.</p><div className="wallet-buttons"><button className="button-primary" onClick={beginCreate}><Plus size={16} /> Create a new wallet</button><button className="button-secondary" onClick={beginImport}><Wallet size={16} /> Import recovery phrase</button></div>{records.length > 0 && <div className="wallet-records">{records.map(record => <article className="wallet-record" key={record.id}><div className="record-heading"><span className="record-chain"><Mark size={24} /></span><div><b>PrivateDAO wallet</b><small>Created {new Date(record.createdAt).toLocaleDateString()}</small></div><button className="record-unlock" onClick={() => { setSelected(record); setFlow('unlock') }}>Unlock wallet</button></div><div className="address-line"><span><i className="solana-dot" /> Solana</span><code>{record.solanaAddress.slice(0, 8)}…{record.solanaAddress.slice(-6)}</code><button onClick={() => void copyAddress(record.solanaAddress, 'solana')} aria-label="Copy Solana address">{copyState === 'solana' ? 'Copied' : 'Copy'}</button></div><div className="address-line"><span><i className="evm-dot" /> EVM</span><code>{record.evmAddress.slice(0, 8)}…{record.evmAddress.slice(-6)}</code><button onClick={() => void copyAddress(record.evmAddress, 'evm')} aria-label="Copy EVM address">{copyState === 'evm' ? 'Copied' : 'Copy'}</button></div><div className="record-actions"><span>{verifiedWalletId === record.id ? <><i className="status-light live" /> Wallet unlocked locally</> : 'Encrypted on this device'}</span><button onClick={() => { if (window.confirm('Remove this encrypted wallet from this device? Make sure you have your recovery phrase backed up first.')) { void import('./lib/walletVault').then(({ removeWallet }) => removeWallet(record.id)).then(() => { setRecords(items => items.filter(item => item.id !== record.id)); if (verifiedWalletId === record.id) setVerifiedWalletId(null) }) } }}>Remove</button></div></article>)}</div>}</section><aside className="wallet-security card-surface"><span className="small-label">SECURITY MODEL</span><div className="security-seal"><ShieldCheck size={31} /></div><h3>Built around your custody.</h3><ul><li><span><ShieldCheck size={16} /></span><span><b>Keys stay on your device</b><small>Recovery phrase is encrypted locally before saving.</small></span></li><li><span><Fingerprint size={16} /></span><span><b>Local confirmation</b><small>PrivatePAY is signed locally after its amount and recipient are shown.</small></span></li><li><span><LockKeyhole size={16} /></span><span><b>No cloud secret storage</b><small>Your unlock passphrase is never saved.</small></span></li></ul><div className="security-note">Keep your recovery phrase offline in a safe place. Anyone with it can control the wallet.</div></aside>
+    <SendNative records={records} connectedWallets={connectedWallets} />
     <WalletConnections standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={onConnectSolana} onConnectEvm={onConnectEvm} onDisconnect={onDisconnectExternal} />
     {flow && <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closeFlow() }}><section className="wallet-modal card-surface" role="dialog" aria-modal="true" aria-labelledby="wallet-modal-title"><div className="modal-heading"><div><span className="small-label">LOCAL WALLET VAULT</span><h2 id="wallet-modal-title">{flow === 'create' ? 'Create your wallet' : flow === 'import' ? 'Restore your wallet' : 'Unlock your wallet'}</h2></div><button className="icon-button" aria-label="Close" onClick={closeFlow}><X size={18} /></button></div>{flow === 'create' && <><p className="modal-copy">Write these words down and keep them offline. This is the only recovery key to your wallet.</p><div className="phrase-grid">{phrase.split(' ').map((word, index) => <div key={`${word}-${index}`}><small>{String(index + 1).padStart(2, '0')}</small><b>{word}</b></div>)}</div><button className="phrase-copy" onClick={() => void navigator.clipboard.writeText(phrase).then(() => onToast('Recovery phrase copied. Clear your clipboard after saving it offline.')).catch(() => setError('Clipboard access failed. Write the words down manually.'))}>Copy recovery phrase <ArrowUpRight size={14} /></button><label className="backup-confirm"><input type="checkbox" checked={backupConfirmed} onChange={event => setBackupConfirmed(event.target.checked)} /><span>I’ve written the recovery phrase down and stored it offline.</span></label></>}{flow === 'import' && <><label className="modal-field">Recovery phrase<textarea value={phrase} onChange={event => setPhrase(event.target.value)} placeholder="Enter your 12 or 24 recovery words" rows={3} autoComplete="off" spellCheck={false} /></label><p className={`phrase-validity ${phrase.trim() ? checkRecoveryPhrase(phrase) ? 'valid' : 'invalid' : ''}`}>{phrase.trim() ? checkRecoveryPhrase(phrase) ? 'Recovery phrase verified' : 'Check the words and their order' : 'Phrase is processed on this device only'}</p></>}{flow !== 'unlock' && <><label className="modal-field">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} minLength={12} autoComplete="new-password" placeholder="At least 12 characters" /></label><p className="passphrase-hint">This passphrase encrypts the wallet on this device. It cannot recover a lost recovery phrase.</p></>}{flow === 'unlock' && <label className="modal-field">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} autoComplete="current-password" placeholder="Your wallet passphrase" onKeyDown={event => { if (event.key === 'Enter') void unlock() }} /></label>}{error && <div className="form-error" role="alert">{error}</div>}<div className="modal-actions"><button className="button-secondary" onClick={closeFlow}>Cancel</button>{flow === 'unlock' ? <button className="button-primary" onClick={() => void unlock()} disabled={!passphrase || busy}>{busy ? 'Unlocking…' : 'Unlock wallet'}</button> : <button className="button-primary" onClick={() => void submitWallet()} disabled={busy || passphrase.length < 12 || (flow === 'create' && !backupConfirmed) || (flow === 'import' && !checkRecoveryPhrase(phrase))}>{busy ? 'Encrypting…' : flow === 'create' ? 'Encrypt & save wallet' : 'Restore & encrypt'}</button>}</div></section></div>}
   </div>
