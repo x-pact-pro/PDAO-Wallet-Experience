@@ -17,7 +17,8 @@
 
 ## Phase 4 — Payments and trading
 - [ ] Canonical PrivatePAY status, exact requirements quote, locally inspected/signed transaction, verification and settlement flow. The current app requests and displays requirements only.
-- [ ] Trading policy/vault/team/DApp sections; real route discovery and quote/sign/receipt execution where provider routes exist.
+- [x] Responsive Trading workspace surfaces: local policy preferences, encrypted local bot-secret vault, team profiles, and external DApp directory.
+- [ ] Connect team profiles to authorized trading-agent APIs; add provider route discovery, quote/sign/receipt execution, and live status without exposing wallet secrets.
 
 ## Phase 5 — Identity and assistant
 - [ ] Auth0 SPA integration uses a memory token cache; enable it after the new production callback is allowlisted. No private-key coupling.
