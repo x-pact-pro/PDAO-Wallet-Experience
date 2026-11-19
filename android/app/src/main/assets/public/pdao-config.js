@@ -1,6 +1,8 @@
 window.PDAO_CONFIG = Object.freeze({
   auth0: Object.freeze({
     enabled: true,
+    environment: 'development',
+    productionHostname: 'wallet.privatedao.org',
     domain: 'dev-xojmajo443e15z7n.us.auth0.com',
     clientId: 'wUmHt00awnKbC9Z3DXED0Ws6TYTVBNoh',
     nativeClientId: 'njohdXm9hwDoX6xh6HYtKS6eisF5plR5',

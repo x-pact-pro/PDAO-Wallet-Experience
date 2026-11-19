@@ -10,9 +10,10 @@
 
 The current Auth0 client belongs to the `dev-xojmajo443e15z7n` development
 tenant. `public/pdao-config.js` marks it as `environment: 'development'`.
-On `wallet.privatedao.org`, the app refuses to start Auth0 or Dock redirects
-while that marker is not `production`; wallet connection and the rest of the
-app remain available. The development tenant is still usable on preview and
+On `wallet.privatedao.org`, Chrome extension pages, and all Android app builds,
+the app refuses to start Auth0 or Dock redirects while that marker is not
+`production`; wallet connection and the rest of the app remain available. The
+development tenant is still usable on non-production browser previews and
 local origins. Do not flip the marker to bypass this guard.
 
 Before production sign-in is enabled, provision and verify the production
