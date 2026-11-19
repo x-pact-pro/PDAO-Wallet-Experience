@@ -28,6 +28,20 @@ by the repository and deployment map below.
 
 GitHub Pages is a secondary preview. Vercel is not the production target.
 
+### Official hostname status
+
+`wallet.privatedao.org` belongs to the existing PDAO Wallet Amplify app
+`d1yr54h1b2l04l`; the `x-pact-pro/PDAO-Wallet` repository remains its source.
+The new Atelier app remains separately deployed at its Amplify hostname. The
+registrar's authoritative nameservers are Namecheap, not the AWS Route 53 zone
+in the account. The old Amplify domain association has been recreated and is
+waiting for the Namecheap CNAME to match its current target:
+`wallet CNAME d4uicyj0ogo9.cloudfront.net`. The currently authoritative CNAME
+still points to the previous CloudFront target, so do not claim the hostname
+cutover is complete. Auth0's Atelier web client now allows
+`https://wallet.privatedao.org/auth/callback`, the origin, and logout URL; the
+older `PDAO Wallet` Auth0 client was not modified.
+
 ## Service and region boundaries
 
 | System | Current authority |
@@ -83,6 +97,13 @@ GitHub Pages is a secondary preview. Vercel is not the production target.
   integrations yet. A DApp link is not an agent execution result.
 
 ## Current handoff (r16 deployed)
+
+- The production hostname is not serving the new Atelier build. The existing
+  PDAO Wallet Amplify app domain association was restored and is now
+  `AWAITING_APP_CNAME`. Namecheap still publishes the former CNAME target; set
+  `wallet` to `d4uicyj0ogo9.cloudfront.net` to restore that existing mapping.
+  Only after that is healthy should a planned cutover to Atelier use the new
+  app's own Amplify-provided CNAME. The Route 53 zone is not authoritative.
 
 - r16 source commit `b27218d` is pushed to `main` and deployed to the new AWS
   Amplify app `d2iwf2bo6lci0r` in `us-east-1` as job `10` (`SUCCEED`). The live
