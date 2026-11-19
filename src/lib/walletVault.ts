@@ -92,21 +92,24 @@ export async function saveWallet(phraseInput: string, passphrase: string): Promi
   ])
   const key = await deriveEncryptionKey(passphrase, salt)
   const plaintext = encoder.encode(JSON.stringify({ phrase }))
-  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext)
-  const record: WalletRecord = {
-    id: crypto.randomUUID(), createdAt: Date.now(), ...addresses,
-    salt: bytesToBase64(salt), iv: bytesToBase64(iv), ciphertext: bytesToBase64(new Uint8Array(ciphertext)), format: 1,
+  try {
+    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext)
+    const record: WalletRecord = {
+      id: crypto.randomUUID(), createdAt: Date.now(), ...addresses,
+      salt: bytesToBase64(salt), iv: bytesToBase64(iv), ciphertext: bytesToBase64(new Uint8Array(ciphertext)), format: 1,
+    }
+    const database = await openDatabase()
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(storeName, 'readwrite')
+      transaction.objectStore(storeName).put(record)
+      transaction.oncomplete = () => resolve()
+      transaction.onerror = () => reject(transaction.error ?? new Error('Could not save the encrypted wallet.'))
+      transaction.onabort = () => reject(transaction.error ?? new Error('Wallet storage was interrupted.'))
+    }).finally(() => database.close())
+    return record
+  } finally {
+    plaintext.fill(0)
   }
-  const database = await openDatabase()
-  await new Promise<void>((resolve, reject) => {
-    const transaction = database.transaction(storeName, 'readwrite')
-    transaction.objectStore(storeName).put(record)
-    transaction.oncomplete = () => resolve()
-    transaction.onerror = () => reject(transaction.error ?? new Error('Could not save the encrypted wallet.'))
-    transaction.onabort = () => reject(transaction.error ?? new Error('Wallet storage was interrupted.'))
-  }).finally(() => database.close())
-  plaintext.fill(0)
-  return record
 }
 
 async function decryptWalletPhrase(record: WalletRecord, passphrase: string): Promise<string> {

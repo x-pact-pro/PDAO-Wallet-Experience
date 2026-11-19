@@ -12,6 +12,7 @@
 
 ## Phase 2 — Local custody
 - [x] Generate/import BIP39 recovery phrases; derive Solana and EVM addresses; encrypt the phrase locally with WebCrypto; verify the passphrase.
+- [x] Zeroize the temporary plaintext recovery-phrase buffer in both successful and failed local wallet persistence paths (r20).
 - [x] Discover injected Solana wallets and register Android Mobile Wallet Adapter through Wallet Standard.
 - [x] Keep external wallet state synchronized: Solana registration/removal and EVM account, chain, and disconnect events (r15).
 - [x] Provide a manual provider rescan for Wallet Standard Solana and injected/EIP-6963 EVM discovery (r16); support remains provider-dependent.

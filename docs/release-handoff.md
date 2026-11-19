@@ -2,6 +2,25 @@
 
 ## Current source and infrastructure status — 2026-11-19
 
+### r20 — local plaintext cleanup and distribution builds
+
+`src/lib/walletVault.ts` now clears the temporary UTF-8 recovery-phrase buffer
+in a `finally` block, including when encryption or IndexedDB persistence fails.
+The existing local encryption format and wallet records are unchanged. Web,
+Chrome MV3, and Android target SDK 35 debug builds completed successfully; no
+test suite was run in this pass. The extension build still emits the known
+Vite notice that `pdao-config.js` is intentionally a classic script and is
+not bundled as a module.
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Web-0.1.0-20261119-r20.zip` | `8b1c3c22f87b3c80adb927e27b22b5235e0d068280833f1c00b6f163aff4accb` | Built; web deployment pending |
+| `PDAO-Wallet-Chrome-0.1.0-20261119-r20.zip` | `092ea6f6ef963b3c6ba8b8bbb49a7afe24e85bd7d7754db08483a9b4f51ce7c5` | Built; install interaction pending |
+| `PDAO-Wallet-Android-debug-0.1.0-20261119-r20.apk` | `2c14fc0aa8e87d44f8537aa031deb811659af5db3d6957e6eca6765367116965` | Built; debug-signed, not F-Droid/release-signed |
+
+Artifacts are in `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/`. The
+Android APK remains for local device review only; it is not a store release.
+
 ### r20 — all-section visual and responsive evidence
 
 Captured the first viewport of all ten sections on the live Wallet Atelier
