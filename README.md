@@ -9,8 +9,10 @@ A new, independent PrivateDAO wallet experience for the web, Chrome side panel, 
 - Bots includes responsive Policy, encrypted Vault, Team Bots, and DApp Browser tabs. Policies and team profiles are local settings only; they do not execute trades or enable production Autopilot.
 - PrivatePAY requests payer-bound x402 requirements, prepares the provider transaction, signs on-device, submits it for verification, and requests settlement only after explicit confirmation. Pending/provider-unavailable responses remain pending; only a confirmed provider result is shown as settled.
 - The browser wallet phrase and private key remain local. The facilitator receives the signed payment transaction for verification and settlement.
-- Wallet signing and trade execution are not enabled yet.
-- Auth0 is staged and disabled until the new production origins are allowlisted. Descope is reserved for machine and agent authorization; scoped API/MCP enforcement still needs to be wired and enabled.
+- Solana swaps use live Jupiter quotes and require a user signature in the selected wallet. PrivatePAY requests an exact provider quote and requires explicit approval before settlement.
+- Auth0 is enabled for this independent app with memory-only browser token storage and a separate native Android client. It does not receive wallet secrets.
+- Ask PDAO uses the existing AWS wallet AI endpoint in `us-east-1`; the API keeps its guardrail, source checks, and request quotas. It receives the current public service catalog, never wallet keys.
+- Descope remains separate for agent identity and scoped MCP/resource access; it is not used as a human login substitute for Auth0.
 - The Chrome extension is a Manifest V3 side panel. Android uses Capacitor and keeps its web bundle local.
 
 ## Development
@@ -32,7 +34,7 @@ cd android
 
 ## Distribution
 
-See `fastlane/metadata/android/en-US` for the initial F-Droid listing text. A public source URL, release signing process, device screenshots, and F-Droid metadata review are still required before submitting a release.
+The web app is hosted in AWS Amplify `us-east-1` at https://main.d2iwf2bo6lci0r.amplifyapp.com/. GitHub Pages remains a secondary preview. See `fastlane/metadata/android/en-US` for the F-Droid listing draft. Android builds are debug APKs until signed for release.
 
 ## License
 

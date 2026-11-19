@@ -1,6 +1,9 @@
-import { StrictMode } from 'react'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Auth0Provider } from '@auth0/auth0-react'
+import { Auth0Provider, useAuth0 } from '@auth0/auth0-react'
+import { App as CapacitorApp } from '@capacitor/app'
+import { Browser } from '@capacitor/browser'
+import { Capacitor } from '@capacitor/core'
 import '@fontsource/dm-sans/400.css'
 import '@fontsource/dm-sans/500.css'
 import '@fontsource/dm-sans/600.css'
@@ -13,19 +16,48 @@ import './index.css'
 import App from './App.tsx'
 
 const auth0 = window.PDAO_CONFIG.auth0
-const callbackUri = `${window.location.origin}${auth0.callbackPath}`
+const nativeRuntime = Capacitor.isNativePlatform()
+const callbackUri = nativeRuntime
+  ? auth0.nativeRedirectUri
+  : `${window.location.origin}${import.meta.env.BASE_URL}auth/callback`
+
+function NativeAuthRedirectHandler() {
+  const { handleRedirectCallback } = useAuth0()
+  useEffect(() => {
+    if (!nativeRuntime) return
+    let active = true
+    const handle = async (url: string) => {
+      try {
+        const callback = new URL(url)
+        if (!callback.searchParams.has('code') && !callback.searchParams.has('error')) return
+        await handleRedirectCallback(url)
+      } finally {
+        await Browser.close().catch(() => undefined)
+      }
+    }
+    const listener = CapacitorApp.addListener('appUrlOpen', ({ url }) => { if (active) void handle(url) })
+    void CapacitorApp.getLaunchUrl().then(result => { if (active && result?.url) void handle(result.url) }).catch(() => undefined)
+    return () => {
+      active = false
+      void listener.then(item => item.remove())
+    }
+  }, [handleRedirectCallback])
+  return null
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Auth0Provider
       domain={auth0.domain}
-      clientId={auth0.clientId}
+      clientId={nativeRuntime ? auth0.nativeClientId : auth0.clientId}
       cacheLocation="memory"
+      useRefreshTokens={nativeRuntime}
       authorizationParams={{ redirect_uri: callbackUri, scope: 'openid profile email' }}
       onRedirectCallback={appState => {
-        window.history.replaceState({}, document.title, appState?.returnTo ?? '/')
+        window.history.replaceState({}, document.title, appState?.returnTo ?? (import.meta.env.BASE_URL === './' ? '/' : import.meta.env.BASE_URL))
       }}
     >
+      <NativeAuthRedirectHandler />
       <App />
     </Auth0Provider>
   </StrictMode>,

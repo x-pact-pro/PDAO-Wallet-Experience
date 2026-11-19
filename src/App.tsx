@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 import PersonaReact from 'persona-react'
 import { VersionedTransaction } from '@solana/web3.js'
 import type { Wallet as StandardWallet } from '@wallet-standard/base'
@@ -17,6 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import './App.css'
+import './Ask.css'
 
 type Section = 'overview' | 'markets' | 'trade' | 'alpha' | 'exchange' | 'wallet' | 'bots' | 'payments' | 'identity' | 'ask'
 type Market = { id: string; symbol: string; name: string; image: string; price: number; change: number; volume: number; sparkline?: number[] }
@@ -58,7 +60,7 @@ function money(value: number, digits = 2) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value)
 }
 function Mark({ size = 34 }: { size?: number }) {
-  return <img className="brand-mark" src="/assets/PrivateDAO_Symbol_Vector_Reconstructed.svg" width={size} height={size} alt="" />
+  return <img className="brand-mark" src={`${import.meta.env.BASE_URL}assets/PrivateDAO_Symbol_Vector_Reconstructed.svg`} width={size} height={size} alt="" />
 }
 
 function Sparkline({ data, positive = true, large = false }: { data?: number[]; positive?: boolean; large?: boolean }) {
@@ -71,6 +73,9 @@ function Sparkline({ data, positive = true, large = false }: { data?: number[]; 
 
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, isLoading: authLoading } = useAuth0()
+  const nativeAuth = Capacitor.isNativePlatform()
+  const authEnabled = window.PDAO_CONFIG.auth0.enabled && import.meta.env.BASE_URL !== './'
+  const nativeRedirectUri = window.PDAO_CONFIG.auth0.nativeRedirectUri
   const [section, setSection] = useState<Section>(() => (window.location.hash.replace('#', '') as Section) || 'overview')
   const [welcome, setWelcome] = useState(!sessionStorage.getItem('pdao-entered'))
   const [mobileNav, setMobileNav] = useState(false)
@@ -228,9 +233,9 @@ function App() {
         <button className="icon-button mobile-menu" aria-label="Open navigation" onClick={() => setMobileNav(true)}><Menu size={20} /></button>
         <div className="breadcrumb"><span>Workspace</span><span className="crumb-slash">/</span><b>{navItems.find(item => item.id === section)?.label}</b></div>
         <div className="topbar-actions"><button className="network-pill"><i /> MAINNET</button><button className="icon-button notification-button" aria-label="Notifications" onClick={() => setToast('You’re all caught up.')}><Bell size={18} /><i /></button><button className="account-button" onClick={() => {
-          if (isAuthenticated) logout({ logoutParams: { returnTo: window.location.origin } })
-          else if (window.PDAO_CONFIG.auth0.enabled) void loginWithRedirect({ appState: { returnTo: window.location.pathname + window.location.hash } })
-          else setToast('Sign-in is staged until this app’s production callback is registered with Auth0.')
+          if (isAuthenticated) void logout({ logoutParams: { returnTo: nativeAuth ? nativeRedirectUri : `${window.location.origin}${import.meta.env.BASE_URL}` }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })
+          else if (authEnabled) void loginWithRedirect({ appState: { returnTo: window.location.pathname + window.location.hash }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })
+          else { changeSection('wallet'); setToast('Connect any available wallet directly. An account sign-in is not required.') }
         }}><span className="account-dot">{isAuthenticated ? (user?.name?.slice(0, 1) ?? 'P') : 'P'}</span><span>{authLoading ? 'Loading…' : isAuthenticated ? (user?.name ?? 'Account') : 'Sign in'}</span><ChevronDown size={14} /></button></div>
       </header>
       <MarketTicker prices={prices} state={priceState} refresh={refreshPrices} />
@@ -244,9 +249,9 @@ function App() {
         {section === 'wallet' && <Wallets onToast={setToast} standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={connectStandard} onConnectEvm={connectEvm} onDisconnectExternal={disconnectExternal} />}
         {section === 'bots' && <BotsWorkspace prices={prices} services={services} onToast={setToast} onNavigate={changeSection} />}
         {section === 'payments' && <Payments amount={amount} setAmount={setAmount} onToast={setToast} onNavigate={setSection} connectedWallets={connectedWallets} />}
-        {section === 'identity' && <Identity authenticated={isAuthenticated} onDockLogin={() => void loginWithRedirect({ authorizationParams: window.PDAO_CONFIG.auth0.dockConnection ? { connection: window.PDAO_CONFIG.auth0.dockConnection } : undefined, appState: { returnTo: window.location.pathname + window.location.hash } })} />}
-        {section === 'ask' && <Ask onToast={setToast} />}
-        <footer className="page-footer"><span>PrivateDAO Wallet <span className="footer-dot">·</span> Private by design <span className="footer-dot">·</span> <a href="/terms.html">Terms</a> <span className="footer-dot">·</span> <a href="/privacy.html">Privacy</a></span><span>Prices from CoinGecko <span className="footer-dot">·</span> {priceState === 'live' ? 'Updated just now' : 'Market feed status shown above'}</span></footer>
+        {section === 'identity' && <Identity authenticated={isAuthenticated} onDockLogin={() => authEnabled && void loginWithRedirect({ authorizationParams: window.PDAO_CONFIG.auth0.dockConnection ? { connection: window.PDAO_CONFIG.auth0.dockConnection } : undefined, appState: { returnTo: window.location.pathname + window.location.hash }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })} />}
+        {section === 'ask' && <Ask services={services} />}
+        <footer className="page-footer"><span>PrivateDAO Wallet <span className="footer-dot">·</span> Private by design <span className="footer-dot">·</span> <a href={`${import.meta.env.BASE_URL}terms.html`}>Terms</a> <span className="footer-dot">·</span> <a href={`${import.meta.env.BASE_URL}privacy.html`}>Privacy</a>{authEnabled && <span className="auth0-attribution"><img src={`${import.meta.env.BASE_URL}assets/auth0-logo.png`} alt="" /> Powered by Auth0</span>}</span><span>Prices from CoinGecko <span className="footer-dot">·</span> {priceState === 'live' ? 'Updated just now' : 'Market feed status shown above'}</span></footer>
       </div>
     </main>
     <nav className="mobile-tabs" aria-label="Quick navigation">{(['overview','markets','trade','wallet'] as Section[]).map(id => { const item = navItems.find(nav => nav.id === id)!; return <button key={id} className={section === id ? 'selected' : ''} onClick={() => changeSection(id)}><item.icon size={19} /><span>{item.label}</span></button> })}</nav>
@@ -689,7 +694,7 @@ function BotsWorkspace({ prices, services, onToast, onNavigate }: { prices: Mark
         <div className="bot-policy-actions"><span><LockKeyhole size={14} /> Saved locally · trades require your wallet approval</span><button className="button-primary" onClick={savePolicy}><ShieldCheck size={15} /> Save policy</button></div>
         <div className="bot-suggestion"><Sparkles size={16} /><div><b>Live market context</b><p>{prices.length ? `${prices.slice(0, 3).map(asset => `${asset.symbol} ${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`).join(' · ')} · Review current signals before acting.` : 'Market signals will appear when the live feed is available.'}</p></div></div>
       </section>
-      <aside className="bot-side-stack"><section className="bot-panel card-surface autopilot-panel"><div className="bot-panel-heading"><div><span className="small-label">PRIVATEPAY AUTOPILOT</span><h3>Delegated payment status</h3></div><button className="refresh-inline" onClick={() => void refreshAutopilot()}><RefreshCw size={13} /> Refresh</button></div><div className="autopilot-status"><span className={`network-health-dot ${autopilot.state === 'ready' && autopilot.operational ? 'healthy' : ''}`} /><div><b>{autopilot.state === 'loading' ? 'Checking live status…' : autopilot.state === 'unavailable' ? 'Status unavailable' : autopilot.operational ? 'Operational' : 'Awaiting activation'}</b><small>{autopilot.state === 'ready' ? `${autopilot.enabled ? 'Enabled' : 'Not enabled'}${autopilot.blockers === undefined ? '' : ` · ${autopilot.blockers} activation blockers`}` : 'Read-only Agent Exchange status'}</small></div></div><p>PrivatePAY Autopilot uses delegated agent sessions and explicit service, network, asset and recipient allowlists. It does not expose reusable payment credentials.</p><button className="button-secondary" onClick={() => onNavigate('payments')}>Open PrivatePAY <ArrowRight size={14} /></button></section>
+      <aside className="bot-side-stack"><section className="bot-panel card-surface descope-security"><div className="descope-heading"><span className="descope-wordmark"><i aria-hidden="true"><b /><b /><b /></i>descope</span><span className="descope-state"><i /> {window.PDAO_CONFIG.descope.enabled ? 'ENABLED' : 'PROJECT CONNECTED'}</span></div><h3>Agent identity & access</h3><p>Descope is the identity and authorization layer for agents. Human wallet sign-in stays with Auth0; wallet signing keys remain on-device.</p><div className="descope-scopes"><span>Agent Exchange</span><span>Trading agents</span><span>PrivatePAY agent routes</span></div><div className="descope-note"><ShieldCheck size={15} /><span><b>{window.PDAO_CONFIG.descope.enabled ? 'Runtime configured' : 'Server enforcement pending'}</b><small>{window.PDAO_CONFIG.descope.enabled ? 'Agent tokens must still be audience and scope checked by the API.' : 'Current Exchange and PrivatePAY routes keep their existing access and x402 rules.'}</small></span></div><a className="descope-doc-link" href="https://docs.descope.com/resources" target="_blank" rel="noreferrer">Descope resource server guide <ExternalLink size={13} /></a></section><section className="bot-panel card-surface autopilot-panel"><div className="bot-panel-heading"><div><span className="small-label">PRIVATEPAY AUTOPILOT</span><h3>Delegated payment status</h3></div><button className="refresh-inline" onClick={() => void refreshAutopilot()}><RefreshCw size={13} /> Refresh</button></div><div className="autopilot-status"><span className={`network-health-dot ${autopilot.state === 'ready' && autopilot.operational ? 'healthy' : ''}`} /><div><b>{autopilot.state === 'loading' ? 'Checking live status…' : autopilot.state === 'unavailable' ? 'Status unavailable' : autopilot.operational ? 'Operational' : 'Awaiting activation'}</b><small>{autopilot.state === 'ready' ? `${autopilot.enabled ? 'Enabled' : 'Not enabled'}${autopilot.blockers === undefined ? '' : ` · ${autopilot.blockers} activation blockers`}` : 'Read-only Agent Exchange status'}</small></div></div><p>PrivatePAY Autopilot uses delegated agent sessions and explicit service, network, asset and recipient allowlists. It does not expose reusable payment credentials.</p><button className="button-secondary" onClick={() => onNavigate('payments')}>Open PrivatePAY <ArrowRight size={14} /></button></section>
         <section className="bot-panel card-surface"><div className="bot-panel-heading"><div><span className="small-label">AGENT EXCHANGE</span><h3>Research capabilities</h3></div><span className="exchange-live-chip"><i /> {services.length ? `${services.length} LIVE` : 'CONNECTING'}</span></div>{relatedServices.length ? <div className="bot-service-list">{relatedServices.map((service, index) => <div key={service.id ?? index}><span><Bot size={15} /></span><div><b>{service.title ?? service.name ?? service.id}</b><small>{service.id ?? 'Agent service'}</small></div><button aria-label="Explore this service" onClick={() => onNavigate('exchange')}><ArrowUpRight size={15} /></button></div>)}</div> : <p>Live wallet research and risk services will appear here from the Agent Exchange catalog.</p>}<button className="text-action" onClick={() => onNavigate('exchange')}>View live services <ArrowRight size={14} /></button></section></aside>
     </div>}
     {tab === 'Vault' && <section className="bot-panel card-surface bot-vault-panel"><div className="bot-panel-heading"><div><span className="small-label">ENCRYPTED BOT VAULT</span><h3>Secrets remain on this device.</h3></div><span className="vault-seal"><LockKeyhole size={17} /> AES-GCM</span></div><p className="bot-vault-copy">Values are encrypted locally with a passphrase before they are stored in IndexedDB. Only labels and encrypted values persist; plaintext is held in memory only while you enter or reveal it.</p><div className="vault-add-grid"><label>Secret label<input value={secretLabel} onChange={event => setSecretLabel(event.target.value)} placeholder="COPY_SOURCE, API token…" /></label><label>Secret value<input type="password" autoComplete="off" value={secretValue} onChange={event => setSecretValue(event.target.value)} placeholder="Enter a secret" /></label><label>Vault passphrase<input type="password" autoComplete="new-password" value={vaultPassphrase} onChange={event => setVaultPassphrase(event.target.value)} placeholder="At least 12 characters" /></label><button className="button-primary" onClick={() => void addSecret()} disabled={busy || !secretLabel.trim() || !secretValue.trim() || vaultPassphrase.length < 12}>{busy ? 'Encrypting…' : <><Plus size={15} /> Encrypt & save</>}</button></div><div className="vault-unlock-row"><label>Passphrase to reveal a stored value<input type="password" autoComplete="current-password" value={unlockPassphrase} onChange={event => setUnlockPassphrase(event.target.value)} placeholder="Entered only when you choose Reveal" /></label><span>{secrets.length} encrypted {secrets.length === 1 ? 'item' : 'items'}</span></div>{error && <div className="form-error" role="alert">{error}</div>}<div className="secret-list">{secrets.length ? secrets.map(record => <article key={record.id}><span className="secret-lock"><LockKeyhole size={15} /></span><div><b>{record.label}</b><small>Encrypted on this device · {new Date(record.createdAt).toLocaleDateString()}</small>{revealed?.id === record.id && <code>{revealed.value}</code>}</div><button className="icon-button" aria-label={revealed?.id === record.id ? 'Hide secret' : 'Reveal secret'} onClick={() => revealed?.id === record.id ? setRevealed(null) : void revealSecret(record)}>{revealed?.id === record.id ? <EyeOff size={16} /> : <Eye size={16} />}</button><button className="icon-button danger-icon" aria-label="Delete secret" onClick={() => { void import('./lib/walletVault').then(({ removeBotSecret }) => removeBotSecret(record.id)).then(() => { setSecrets(items => items.filter(item => item.id !== record.id)); if (revealed?.id === record.id) setRevealed(null) }).catch(() => setError('Could not delete this encrypted secret.')) }}><Trash2 size={15} /></button></article>) : <div className="vault-empty"><LockKeyhole size={20} /><span>No bot secrets saved yet.</span></div>}</div><div className="primary-key-note"><ShieldCheck size={16} /><span>Your primary wallet recovery phrase is kept in the Wallet vault and is never shared with bots or Agent Exchange.</span></div></section>}
@@ -883,10 +888,43 @@ function Payments({ amount, setAmount, onToast, onNavigate, connectedWallets }: 
   </div>
 }
 
-function Ask({ onToast }: { onToast: (s: string) => void }) {
+function Ask({ services }: { services: Service[] }) {
   const [question, setQuestion] = useState('')
+  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
   const suggestions = ['What’s moving in the market today?', 'Explain PrivatePAY x402', 'How do I keep my wallet secure?', 'What can Agent Exchange do?']
-  return <section className="ask-page card-surface"><div className="ask-heading"><div className="ask-avatar"><Mark size={42} /></div><span className="small-label">PDAO INTELLIGENCE</span><h2>A clearer answer starts here.</h2><p>Ask about markets, self-custody and the PDAO ecosystem.</p></div><div className="prompt-grid">{suggestions.map(prompt => <button key={prompt} onClick={() => setQuestion(prompt)}>{prompt}<ArrowUpRight size={15} /></button>)}</div><div className="ask-compose"><textarea value={question} onChange={event => setQuestion(event.target.value)} placeholder="Ask PDAO anything…" rows={3} /><div><span><ShieldCheck size={14} /> Don’t include recovery phrases or private keys.</span><button className="button-primary" onClick={() => onToast('PDAO intelligence is not connected in this new app yet.')} disabled={!question.trim()}>Ask PDAO <ArrowUpRight size={15} /></button></div></div></section>
+  const ask = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const message = question.trim()
+    if (!message || busy) return
+    setBusy(true); setError(''); setQuestion('')
+    setMessages(current => [...current, { role: 'user', content: message }])
+    try {
+      const response = await fetch(`${window.PDAO_CONFIG.walletApi.origin}/v1/ai/ask`, {
+        method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({
+          message,
+          history: messages.slice(-6),
+          services: services.slice(0, 12).map(service => ({
+            title: service.title ?? service.name ?? service.id ?? 'Agent service',
+            summary: service.summary ?? service.description,
+            category: service.category,
+            price: typeof service.price === 'number' ? service.price : null,
+            currency: service.currency ?? 'USDC',
+          })),
+        }),
+      })
+      const result = await response.json() as { answer?: string; error?: string }
+      if (!response.ok || typeof result.answer !== 'string') throw new Error(result.error || 'PDAO Intelligence is temporarily unavailable. Please try again.')
+      setMessages(current => [...current, { role: 'assistant', content: result.answer! }])
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not reach PDAO Intelligence.')
+      setMessages(current => current.filter((item, index) => !(item.role === 'user' && index === current.length - 1)))
+      setQuestion(message)
+    } finally { setBusy(false) }
+  }
+  return <section className="ask-page card-surface"><div className="ask-heading"><div className="ask-avatar"><Mark size={42} /></div><span className="small-label">PDAO INTELLIGENCE</span><h2>A clearer answer starts here.</h2><p>Live answers about markets, self-custody and the PDAO ecosystem.</p></div>{messages.length > 0 && <div className="ask-thread" aria-live="polite">{messages.map((item, index) => <article className={`ask-message ${item.role}`} key={`${item.role}-${index}`}><span>{item.role === 'assistant' ? 'PDAO' : 'YOU'}</span><p>{item.content}</p></article>)}{busy && <div className="ask-thinking"><i /> Reading your question…</div>}</div>}<div className="prompt-grid">{suggestions.map(prompt => <button key={prompt} onClick={() => setQuestion(prompt)}>{prompt}<ArrowUpRight size={15} /></button>)}</div><form className="ask-compose" onSubmit={event => void ask(event)}><textarea value={question} onChange={event => setQuestion(event.target.value)} placeholder="Ask PDAO anything…" rows={3} maxLength={1200} disabled={busy} /><div><span><ShieldCheck size={14} /> Your message is sent to PDAO’s protected AI service. Never include wallet secrets.</span><button className="button-primary" type="submit" disabled={!question.trim() || busy}>{busy ? 'Thinking…' : 'Ask PDAO'} <ArrowUpRight size={15} /></button></div>{error && <p className="ask-error" role="alert">{error}</p>}</form></section>
 }
 
 export default App
