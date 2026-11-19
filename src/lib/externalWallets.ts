@@ -12,6 +12,7 @@ export type Eip1193Provider = {
 
 export type EvmProviderInfo = { uuid: string; name: string; icon: string; rdns: string }
 export type EvmProviderOption = { info: EvmProviderInfo; provider: Eip1193Provider }
+export type EvmWalletDiscovery = { refresh: () => void; dispose: () => void }
 export type ConnectedExternalWallet =
   | { id: string; chain: 'solana'; name: string; address: string; icon: string; wallet: Wallet; account: WalletAccount }
   | { id: string; chain: 'evm'; name: string; address: string; icon: string; chainId: string; provider: Eip1193Provider }
@@ -112,7 +113,7 @@ export async function signWithExternalSolanaWallet(
   return encodeBase64(signed.signedTransaction)
 }
 
-export function discoverEvmWallets(listener: (option: EvmProviderOption) => void): () => void {
+export function discoverEvmWallets(listener: (option: EvmProviderOption) => void): EvmWalletDiscovery {
   const seen = new Set<string>()
   const announce = (event: Event) => {
     const detail = (event as CustomEvent<EvmProviderOption>).detail
@@ -121,13 +122,19 @@ export function discoverEvmWallets(listener: (option: EvmProviderOption) => void
     listener(detail)
   }
   window.addEventListener('eip6963:announceProvider', announce)
-  window.dispatchEvent(new Event('eip6963:requestProvider'))
-  const fallback = (window as Window & { ethereum?: Eip1193Provider & { isMetaMask?: boolean } }).ethereum
-  if (fallback && !seen.has('injected-default')) {
-    seen.add('injected-default')
-    listener({ info: { uuid: 'injected-default', name: 'Browser wallet', icon: '', rdns: 'injected.provider' }, provider: fallback })
+  const refresh = () => {
+    window.dispatchEvent(new Event('eip6963:requestProvider'))
+    const fallback = (window as Window & { ethereum?: Eip1193Provider }).ethereum
+    if (fallback && !seen.has('injected-default')) {
+      seen.add('injected-default')
+      listener({ info: { uuid: 'injected-default', name: 'Browser wallet', icon: '', rdns: 'injected.provider' }, provider: fallback })
+    }
   }
-  return () => window.removeEventListener('eip6963:announceProvider', announce)
+  refresh()
+  return {
+    refresh,
+    dispose: () => window.removeEventListener('eip6963:announceProvider', announce),
+  }
 }
 
 export async function connectEvmWallet(option: EvmProviderOption): Promise<ConnectedExternalWallet> {

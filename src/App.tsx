@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
@@ -9,7 +9,7 @@ import type { Wallet as StandardWallet } from '@wallet-standard/base'
 import { checkRecoveryPhrase, createRecoveryPhrase } from './lib/mnemonic'
 import type { PreparedSolanaTransaction, WalletRecord } from './lib/walletVault'
 import { readPortfolioBalances, readSolanaTokenBalances, type PortfolioBalance, type SolanaTokenBalance } from './lib/portfolio'
-import { connectEvmWallet, connectSolanaWallet, discoverEvmWallets, discoverSolanaWallets, disconnectSolanaWallet, getExistingEvmAccount, onSolanaWalletsChanged, signWithExternalSolanaWallet, type ConnectedExternalWallet, type EvmProviderOption } from './lib/externalWallets'
+import { connectEvmWallet, connectSolanaWallet, discoverEvmWallets, discoverSolanaWallets, disconnectSolanaWallet, getExistingEvmAccount, onSolanaWalletsChanged, signWithExternalSolanaWallet, type ConnectedExternalWallet, type EvmProviderOption, type EvmWalletDiscovery } from './lib/externalWallets'
 import {
   Activity, ArrowDownLeft, ArrowLeftRight, ArrowRight, ArrowUpRight,
   Bell, Bot, ChevronDown, CircleHelp, Command, Compass, ExternalLink,
@@ -92,6 +92,7 @@ function App() {
   const [standardWallets, setStandardWallets] = useState<readonly StandardWallet[]>([])
   const [evmProviders, setEvmProviders] = useState<EvmProviderOption[]>([])
   const [connectedWallets, setConnectedWallets] = useState<ConnectedExternalWallet[]>([])
+  const evmDiscovery = useRef<EvmWalletDiscovery | null>(null)
 
   useEffect(() => {
     let active = true
@@ -137,7 +138,7 @@ function App() {
   useEffect(() => {
     let active = true
     const evmProviderCleanup = new Map<string, () => void>()
-    const unsubscribe = discoverEvmWallets(option => {
+    const discovery = discoverEvmWallets(option => {
       setEvmProviders(current => current.some(item => item.info.uuid === option.info.uuid) ? current : [...current, option])
       void getExistingEvmAccount(option).then(account => {
         if (active && account) setConnectedWallets(current => current.some(item => item.id === account.id) ? current : [...current, account])
@@ -189,9 +190,11 @@ function App() {
       }
       evmProviderCleanup.set(providerId, removeProviderListeners)
     })
+    evmDiscovery.current = discovery
     return () => {
       active = false
-      unsubscribe()
+      discovery.dispose()
+      evmDiscovery.current = null
       evmProviderCleanup.forEach(remove => remove())
       evmProviderCleanup.clear()
     }
@@ -215,6 +218,19 @@ function App() {
     const target = connectedWallets.find(item => item.id === id)
     if (target?.chain === 'solana') void disconnectSolanaWallet(target.wallet).catch(() => undefined)
     setConnectedWallets(current => current.filter(item => item.id !== id))
+  }
+  const rescanWalletProviders = () => {
+    const wallets = discoverSolanaWallets()
+    setStandardWallets(wallets)
+    void Promise.all(wallets.map(wallet => connectSolanaWallet(wallet, true).catch(() => null))).then(accounts => {
+      setConnectedWallets(current => {
+        const next: ConnectedExternalWallet[] = [...current.filter(item => item.chain !== 'solana')]
+        accounts.forEach(account => { if (account && !next.some(item => item.id === account.id)) next.push(account) })
+        return next
+      })
+    })
+    evmDiscovery.current?.refresh()
+    setToast('Scanning for compatible wallet providers…')
   }
 
   const refreshPrices = async () => {
@@ -299,7 +315,7 @@ function App() {
         {section === 'trade' && <Trade prices={prices} amount={amount} setAmount={setAmount} onToast={setToast} connectedWallets={connectedWallets} onNavigate={changeSection} />}
         {section === 'alpha' && <Alpha prices={prices} state={priceState} onNavigate={changeSection} />}
         {section === 'exchange' && <Exchange services={filteredServices} state={serviceState} query={query} setQuery={setQuery} category={category} setCategory={setCategory} refresh={refreshServices} />}
-        {section === 'wallet' && <Wallets onToast={setToast} standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={connectStandard} onConnectEvm={connectEvm} onDisconnectExternal={disconnectExternal} />}
+        {section === 'wallet' && <Wallets onToast={setToast} standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={connectStandard} onConnectEvm={connectEvm} onDisconnectExternal={disconnectExternal} onRescanWallets={rescanWalletProviders} />}
         {section === 'bots' && <BotsWorkspace prices={prices} services={services} onToast={setToast} onNavigate={changeSection} />}
         {section === 'payments' && <Payments amount={amount} setAmount={setAmount} onToast={setToast} onNavigate={setSection} connectedWallets={connectedWallets} />}
         {section === 'identity' && <Identity authenticated={isAuthenticated} onDockLogin={() => authEnabled && void loginWithRedirect({ authorizationParams: window.PDAO_CONFIG.auth0.dockConnection ? { connection: window.PDAO_CONFIG.auth0.dockConnection } : undefined, appState: { returnTo: window.location.pathname + window.location.hash }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })} />}
@@ -710,7 +726,7 @@ function ServiceCard({ service }: { service: Service }) {
   return <article className="service-card card-surface"><div className="service-card-top"><span className="service-icon"><Command size={20} /></span><span className="service-category">{service.category ?? 'PDAO SERVICE'}</span></div><code>{service.id ?? 'agent.service'}</code><h3>{title}</h3><p>{service.summary ?? service.description ?? 'A live capability from the PDAO Agent Exchange.'}</p><div className="service-card-footer"><span>Published price <b>{price}</b></span><button aria-label={`View ${title}`}><ArrowUpRight size={17} /></button></div></article>
 }
 
-function Wallets({ onToast, standardWallets, evmProviders, connectedWallets, onConnectSolana, onConnectEvm, onDisconnectExternal }: { onToast: (s: string) => void; standardWallets: readonly StandardWallet[]; evmProviders: EvmProviderOption[]; connectedWallets: ConnectedExternalWallet[]; onConnectSolana: (wallet: StandardWallet) => void; onConnectEvm: (provider: EvmProviderOption) => void; onDisconnectExternal: (id: string) => void }) {
+function Wallets({ onToast, standardWallets, evmProviders, connectedWallets, onConnectSolana, onConnectEvm, onDisconnectExternal, onRescanWallets }: { onToast: (s: string) => void; standardWallets: readonly StandardWallet[]; evmProviders: EvmProviderOption[]; connectedWallets: ConnectedExternalWallet[]; onConnectSolana: (wallet: StandardWallet) => void; onConnectEvm: (provider: EvmProviderOption) => void; onDisconnectExternal: (id: string) => void; onRescanWallets: () => void }) {
   const [records, setRecords] = useState<WalletRecord[]>([])
   const [flow, setFlow] = useState<'create' | 'import' | 'unlock' | null>(null)
   const [selected, setSelected] = useState<WalletRecord | null>(null)
@@ -762,7 +778,7 @@ function Wallets({ onToast, standardWallets, evmProviders, connectedWallets, onC
 
   return <div className="wallets-layout"><section className="wallet-intro card-surface"><div className="wallet-emblem"><Mark size={50} /></div><span className="small-label">SELF CUSTODY, MADE CLEAR</span><h2>{records.length ? 'Your wallet is yours.' : 'Begin with your own keys.'}</h2><p>Create a new wallet on this device or restore one you already control. Your recovery phrase is encrypted locally with your passphrase and never sent to a server.</p><div className="wallet-buttons"><button className="button-primary" onClick={beginCreate}><Plus size={16} /> Create a new wallet</button><button className="button-secondary" onClick={beginImport}><Wallet size={16} /> Import recovery phrase</button></div>{records.length > 0 && <div className="wallet-records">{records.map(record => <article className="wallet-record" key={record.id}><div className="record-heading"><span className="record-chain"><Mark size={24} /></span><div><b>PrivateDAO wallet</b><small>Created {new Date(record.createdAt).toLocaleDateString()}</small></div><button className="record-unlock" onClick={() => { setSelected(record); setFlow('unlock') }}>Unlock wallet</button></div><div className="address-line"><span><i className="solana-dot" /> Solana</span><code>{record.solanaAddress.slice(0, 8)}…{record.solanaAddress.slice(-6)}</code><button onClick={() => void copyAddress(record.solanaAddress, 'solana')} aria-label="Copy Solana address">{copyState === 'solana' ? 'Copied' : 'Copy'}</button></div><div className="address-line"><span><i className="evm-dot" /> EVM</span><code>{record.evmAddress.slice(0, 8)}…{record.evmAddress.slice(-6)}</code><button onClick={() => void copyAddress(record.evmAddress, 'evm')} aria-label="Copy EVM address">{copyState === 'evm' ? 'Copied' : 'Copy'}</button></div><div className="record-actions"><span>{verifiedWalletId === record.id ? <><i className="status-light live" /> Wallet unlocked locally</> : 'Encrypted on this device'}</span><button onClick={() => { if (window.confirm('Remove this encrypted wallet from this device? Make sure you have your recovery phrase backed up first.')) { void import('./lib/walletVault').then(({ removeWallet }) => removeWallet(record.id)).then(() => { setRecords(items => items.filter(item => item.id !== record.id)); if (verifiedWalletId === record.id) setVerifiedWalletId(null) }) } }}>Remove</button></div></article>)}</div>}</section><aside className="wallet-security card-surface"><span className="small-label">SECURITY MODEL</span><div className="security-seal"><ShieldCheck size={31} /></div><h3>Built around your custody.</h3><ul><li><span><ShieldCheck size={16} /></span><span><b>Keys stay on your device</b><small>Recovery phrase is encrypted locally before saving.</small></span></li><li><span><Fingerprint size={16} /></span><span><b>Local confirmation</b><small>PrivatePAY is signed locally after its amount and recipient are shown.</small></span></li><li><span><LockKeyhole size={16} /></span><span><b>No cloud secret storage</b><small>Your unlock passphrase is never saved.</small></span></li></ul><div className="security-note">Keep your recovery phrase offline in a safe place. Anyone with it can control the wallet.</div></aside>
     <SendNative records={records} connectedWallets={connectedWallets} />
-    <WalletConnections standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={onConnectSolana} onConnectEvm={onConnectEvm} onDisconnect={onDisconnectExternal} />
+    <WalletConnections standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={onConnectSolana} onConnectEvm={onConnectEvm} onDisconnect={onDisconnectExternal} onRescan={onRescanWallets} />
     {flow && <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closeFlow() }}><section className="wallet-modal card-surface" role="dialog" aria-modal="true" aria-labelledby="wallet-modal-title"><div className="modal-heading"><div><span className="small-label">LOCAL WALLET VAULT</span><h2 id="wallet-modal-title">{flow === 'create' ? 'Create your wallet' : flow === 'import' ? 'Restore your wallet' : 'Unlock your wallet'}</h2></div><button className="icon-button" aria-label="Close" onClick={closeFlow}><X size={18} /></button></div>{flow === 'create' && <><p className="modal-copy">Write these words down and keep them offline. This is the only recovery key to your wallet.</p><div className="phrase-grid">{phrase.split(' ').map((word, index) => <div key={`${word}-${index}`}><small>{String(index + 1).padStart(2, '0')}</small><b>{word}</b></div>)}</div><button className="phrase-copy" onClick={() => void navigator.clipboard.writeText(phrase).then(() => onToast('Recovery phrase copied. Clear your clipboard after saving it offline.')).catch(() => setError('Clipboard access failed. Write the words down manually.'))}>Copy recovery phrase <ArrowUpRight size={14} /></button><label className="backup-confirm"><input type="checkbox" checked={backupConfirmed} onChange={event => setBackupConfirmed(event.target.checked)} /><span>I’ve written the recovery phrase down and stored it offline.</span></label></>}{flow === 'import' && <><label className="modal-field">Recovery phrase<textarea value={phrase} onChange={event => setPhrase(event.target.value)} placeholder="Enter your 12 or 24 recovery words" rows={3} autoComplete="off" spellCheck={false} /></label><p className={`phrase-validity ${phrase.trim() ? checkRecoveryPhrase(phrase) ? 'valid' : 'invalid' : ''}`}>{phrase.trim() ? checkRecoveryPhrase(phrase) ? 'Recovery phrase verified' : 'Check the words and their order' : 'Phrase is processed on this device only'}</p></>}{flow !== 'unlock' && <><label className="modal-field">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} minLength={12} autoComplete="new-password" placeholder="At least 12 characters" /></label><p className="passphrase-hint">This passphrase encrypts the wallet on this device. It cannot recover a lost recovery phrase.</p></>}{flow === 'unlock' && <label className="modal-field">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} autoComplete="current-password" placeholder="Your wallet passphrase" onKeyDown={event => { if (event.key === 'Enter') void unlock() }} /></label>}{error && <div className="form-error" role="alert">{error}</div>}<div className="modal-actions"><button className="button-secondary" onClick={closeFlow}>Cancel</button>{flow === 'unlock' ? <button className="button-primary" onClick={() => void unlock()} disabled={!passphrase || busy}>{busy ? 'Unlocking…' : 'Unlock wallet'}</button> : <button className="button-primary" onClick={() => void submitWallet()} disabled={busy || passphrase.length < 12 || (flow === 'create' && !backupConfirmed) || (flow === 'import' && !checkRecoveryPhrase(phrase))}>{busy ? 'Encrypting…' : flow === 'create' ? 'Encrypt & save wallet' : 'Restore & encrypt'}</button>}</div></section></div>}
   </div>
 }
@@ -776,11 +792,11 @@ const suggestedWallets = [
   { name: 'Coinbase Wallet', chain: 'Multi-chain', href: 'https://www.coinbase.com/wallet/downloads' },
 ]
 
-function WalletConnections({ standardWallets, evmProviders, connectedWallets, onConnectSolana, onConnectEvm, onDisconnect }: { standardWallets: readonly StandardWallet[]; evmProviders: EvmProviderOption[]; connectedWallets: ConnectedExternalWallet[]; onConnectSolana: (wallet: StandardWallet) => void; onConnectEvm: (provider: EvmProviderOption) => void; onDisconnect: (id: string) => void }) {
+function WalletConnections({ standardWallets, evmProviders, connectedWallets, onConnectSolana, onConnectEvm, onDisconnect, onRescan }: { standardWallets: readonly StandardWallet[]; evmProviders: EvmProviderOption[]; connectedWallets: ConnectedExternalWallet[]; onConnectSolana: (wallet: StandardWallet) => void; onConnectEvm: (provider: EvmProviderOption) => void; onDisconnect: (id: string) => void; onRescan: () => void }) {
   const compatibleSolana = standardWallets.filter(wallet => wallet.chains.some(chain => chain.startsWith('solana:')) && Boolean(wallet.features['standard:connect']))
   const detectedNames = new Set([...compatibleSolana.map(wallet => wallet.name.toLowerCase()), ...evmProviders.map(provider => provider.info.name.toLowerCase())])
   return <section className="wallet-connect-hub card-surface">
-    <div className="wallet-hub-heading"><div><span className="small-label">YOUR CONNECTED WALLETS</span><h3>Bring the wallet you already use.</h3><p>We discover compatible wallets automatically. Your wallet approves every signature; no recovery phrase or vault passphrase is requested.</p></div><span className="wallet-hub-seal"><Fingerprint size={22} /><small>KEYS STAY<br />WITH YOU</small></span></div>
+    <div className="wallet-hub-heading"><div><span className="small-label">YOUR CONNECTED WALLETS</span><h3>Bring the wallet you already use.</h3><p>We discover compatible wallets automatically. Your wallet approves every signature; no recovery phrase or vault passphrase is requested.</p></div><div className="wallet-hub-actions"><button className="refresh-inline" onClick={onRescan} aria-label="Scan for wallets again"><RefreshCw size={13} /> Scan again</button><span className="wallet-hub-seal"><Fingerprint size={22} /><small>KEYS STAY<br />WITH YOU</small></span></div></div>
     {connectedWallets.length > 0 && <div className="external-wallet-grid">{connectedWallets.map(item => <article className="external-wallet-card" key={item.id}><div className="external-wallet-brand">{item.icon ? <img src={item.icon} alt="" /> : <Wallet size={22} />}<span><b>{item.name}</b><small>{item.chain === 'solana' ? 'Solana · connected' : `EVM · ${item.chainId}`}</small></span><i className="external-connected-dot" /></div><code>{item.address.slice(0, 10)}…{item.address.slice(-8)}</code><button className="wallet-disconnect" onClick={() => onDisconnect(item.id)}>Disconnect from this app</button></article>)}</div>}
     <div className="wallet-provider-columns">
       <div className="wallet-provider-group"><div className="wallet-provider-title"><span className="wallet-chain-icon solana-chain">S</span><div><b>Solana wallets</b><small>Wallet Standard discovery</small></div><span className="provider-count">{compatibleSolana.length} found</span></div>{compatibleSolana.length ? compatibleSolana.map(wallet => { const connected = connectedWallets.some(item => item.chain === 'solana' && item.name === wallet.name); return <button className="wallet-provider-option" key={wallet.name} onClick={() => onConnectSolana(wallet)} disabled={connected}><img src={wallet.icon} alt="" /><span><b>{wallet.name}</b><small>{connected ? 'Connected to this app' : 'Detected in this browser'}</small></span><span className={connected ? 'provider-state connected' : 'provider-state'}>{connected ? 'Connected' : 'Connect'}</span></button> }) : <div className="wallet-provider-empty"><span>No compatible Solana wallet was detected in this browser.</span><small>Install a wallet that supports Wallet Standard, then return here to connect.</small></div>}</div>
