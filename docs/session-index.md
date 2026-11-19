@@ -104,7 +104,9 @@ older `PDAO Wallet` Auth0 client was not modified.
 - r19 responsive inspection covered all ten sections at widths 320, 360, 390,
   768, 1024, and 1440 CSS pixels. Overview cards and Agent Exchange now stay
   within the viewport; the market preview scrolls within its card on phones.
-  Browser evidence is recorded in `docs/release-handoff.md`.
+  Commit `4683db5` is pushed; Amplify job `14` succeeded and the new app's
+  public config, JS, and CSS returned HTTP 200. Browser evidence and artifact
+  hashes are recorded in `docs/release-handoff.md`.
 
 - The production hostname is not serving the new Atelier build yet. The old
   app association was removed and the new Amplify association is

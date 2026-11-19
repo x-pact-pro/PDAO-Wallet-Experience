@@ -21,9 +21,16 @@ verify wallet signing, biometrics, payments, or native Android rendering.
 
 | Artifact | SHA-256 | State |
 |---|---|---|
-| `PDAO-Wallet-Web-0.1.0-20261119-r19.zip` | `26d5a0ac324d6b36d12b51f88d32cb77ee8e27bed951ec6c707e7acc68040337` | Built; deployment pending |
+| `PDAO-Wallet-Web-0.1.0-20261119-r19.zip` | `26d5a0ac324d6b36d12b51f88d32cb77ee8e27bed951ec6c707e7acc68040337` | Amplify job `14` succeeded; live assets verified |
 | `PDAO-Wallet-Chrome-0.1.0-20261119-r19.zip` | `7ad9239966fdeca09ab3671755abd38331ab8aafaf82bd5bafdada8181865315` | Chrome MV3 build; ZIP integrity checked |
 | `PDAO-Wallet-Android-debug-0.1.0-20261119-r19.apk` | `af7479c023c0377c284b5e31960a069eb1eed7bf3d9a4331d39a52539531e986` | Android target SDK 35 debug build; not release-signed |
+
+Source commit `4683db5` is pushed to `x-pact-pro/PDAO-Wallet-Experience`.
+The web build is live at
+`https://main.d2iwf2bo6lci0r.amplifyapp.com/`; its public config and hashed
+JS/CSS assets returned HTTP 200, and the served CSS contains the r19 responsive
+rules. The production hostname remains routed to the original wallet app until
+the pending Namecheap CNAME change is completed.
 
 ### r18 — quick navigation and truthful alerts
 
