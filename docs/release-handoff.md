@@ -33,6 +33,15 @@ The repository now exposes the required verification commands directly as
 `npm run typecheck` and `npm test`; both are backed by the TypeScript project
 and the native Auth0 callback/price regression checks.
 
+The Amplify custom-domain association for `wallet.privatedao.org` is present
+but failed DNS verification because the registrar still delegates to
+`dns1.registrar-servers.com` and `dns2.registrar-servers.com`. The correct
+records already exist in the AWS Route 53 hosted zone: delegate the domain to
+`ns-1088.awsdns-08.org`, `ns-2024.awsdns-61.co.uk`, `ns-690.awsdns-22.net`, and
+`ns-291.awsdns-36.com`, or create equivalent records at the active registrar:
+the wallet CNAME to `d3girmftahg4rp.cloudfront.net` plus the ACM validation
+CNAME returned by Amplify. No registrar change was made automatically.
+
 ## r27 — live Team Bot route discovery
 
 The Team Bots workspace now consumes the live Agent Exchange catalog when it
