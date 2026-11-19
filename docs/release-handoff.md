@@ -2,17 +2,20 @@
 
 ## Current source and infrastructure status — 2026-11-19
 
-### r21 — reproducible Android source build and F-Droid metadata
+### r22 — clean-clone Android source build and F-Droid metadata
 
 Commit `d38902b7951e157e679ecb4f946fee1ed29e35f7` vendors the Capacitor
 Android module sources and points Gradle at those tracked modules. The root
-`.fdroid.yml` recipe points to that full source commit. A local release build
-exists with target SDK 35; the corrected clean-clone build is pending. The APK
-is unsigned and has not been installed on a device or submitted to F-Droid.
+`.fdroid.yml` recipe points to that full source commit. `assembleRelease`
+succeeded from a clean clone in 5m 38s with target SDK 35 and no npm packages
+or per-project SDK path file. The APK hash differs from the local-tree build,
+so this is source-build evidence rather than a bit-for-bit reproducibility
+claim. It is unsigned and has not been installed on a device or submitted to
+F-Droid.
 
 | Artifact | SHA-256 | State |
 |---|---|---|
-| `PDAO-Wallet-Android-release-unsigned-0.1.0-20261119-r21.apk` | `c3dc09b1422c102aadd9a691ca7b2c08e5b3a9d4c263598487e68083454c49ab` | Offline release build; unsigned; not directly installable |
+| `PDAO-Wallet-Android-release-unsigned-0.1.0-20261119-r22.apk` | `fb4474c6acc0286e34da4261b35eb941b63b0124dd2962400640d943a498195a` | Clean-clone offline release build; unsigned; not directly installable |
 
 The original `x-pact-pro/PDAO-Wallet` remains paired with the original
 Amplify app `d1yr54h1b2l04l` in `us-east-1`. This release belongs only to
