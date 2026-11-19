@@ -6,6 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   android: {
     allowMixedContent: false,
+    appendUserAgent: 'Solana Mobile Web Shell',
   },
   plugins: {
     SplashScreen: {

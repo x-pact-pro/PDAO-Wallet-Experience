@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
+import { Capacitor } from '@capacitor/core'
 import PersonaReact from 'persona-react'
 import { VersionedTransaction } from '@solana/web3.js'
 import type { Wallet as StandardWallet } from '@wallet-standard/base'
@@ -87,6 +88,7 @@ function App() {
 
   useEffect(() => {
     let active = true
+    let unsubscribe: (() => void) | undefined
     const refresh = (wallets: readonly StandardWallet[]) => {
       setStandardWallets(wallets)
       void Promise.all(wallets.map(wallet => connectSolanaWallet(wallet, true).catch(() => null))).then(accounts => {
@@ -98,9 +100,32 @@ function App() {
         })
       })
     }
-    refresh(discoverSolanaWallets())
-    const unsubscribe = onSolanaWalletsChanged(refresh)
-    return () => { active = false; unsubscribe() }
+    const initialize = async () => {
+      if (Capacitor.getPlatform() === 'android') {
+        const { createDefaultAuthorizationCache, createDefaultChainSelector, createDefaultWalletNotFoundHandler, registerMwa } = await import('@solana-mobile/wallet-standard-mobile')
+        registerMwa({
+          appIdentity: {
+            name: 'PrivateDAO Wallet',
+            uri: 'https://github.com/x-pact-pro/PDAO-Wallet-Experience',
+            icon: 'https://raw.githubusercontent.com/x-pact-pro/PDAO-Wallet-Experience/main/public/icons/pdao-128.png',
+          },
+          authorizationCache: createDefaultAuthorizationCache(),
+          chains: ['solana:mainnet', 'solana:devnet'],
+          chainSelector: createDefaultChainSelector(),
+          onWalletNotFound: createDefaultWalletNotFoundHandler(),
+        })
+      }
+      if (!active) return
+      refresh(discoverSolanaWallets())
+      unsubscribe = onSolanaWalletsChanged(refresh)
+    }
+    void initialize().catch(() => {
+      if (active) {
+        refresh(discoverSolanaWallets())
+        unsubscribe = onSolanaWalletsChanged(refresh)
+      }
+    })
+    return () => { active = false; unsubscribe?.() }
   }, [])
   useEffect(() => {
     let active = true

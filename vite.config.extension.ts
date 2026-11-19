@@ -12,6 +12,7 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
+            { name: 'mobile-wallet', test: /node_modules[\\/](?:@solana-mobile[\\/]|@solana[\\/]wallet-standard-chains[\\/]|@wallet-standard[\\/]wallet[\\/]|lit[\\/]|qrcode[\\/])/, priority: 35 },
             { name: 'react-core', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 30 },
             { name: 'auth0', test: /node_modules[\\/]@auth0[\\/]/, priority: 25 },
             { name: 'icons', test: /node_modules[\\/]lucide-react[\\/]/, priority: 20 },
