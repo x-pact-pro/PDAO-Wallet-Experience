@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
+import PersonaReact from 'persona-react'
 import type { Wallet as StandardWallet } from '@wallet-standard/base'
 import { checkRecoveryPhrase, createRecoveryPhrase } from './lib/mnemonic'
 import type { PreparedSolanaTransaction, WalletRecord } from './lib/walletVault'
@@ -14,7 +15,7 @@ import {
 } from 'lucide-react'
 import './App.css'
 
-type Section = 'overview' | 'markets' | 'trade' | 'alpha' | 'exchange' | 'wallet' | 'bots' | 'payments' | 'ask'
+type Section = 'overview' | 'markets' | 'trade' | 'alpha' | 'exchange' | 'wallet' | 'bots' | 'payments' | 'identity' | 'ask'
 type Market = { id: string; symbol: string; name: string; image: string; price: number; change: number; volume: number; sparkline?: number[] }
 type NetworkStatus = { network: string; label?: string; status: string; latency_ms?: number; provider?: string; cluster?: string; block_number?: string }
 type Service = { id?: string; name?: string; title?: string; description?: string; summary?: string; category?: string; price?: number | string; currency?: string; pricing?: unknown }
@@ -34,6 +35,7 @@ const navItems: { id: Section; label: string; icon: LucideIcon; group?: string }
   { id: 'bots', label: 'Bots', icon: Bot, group: 'Automate' },
   { id: 'wallet', label: 'Wallets', icon: Wallet, group: 'Manage' },
   { id: 'payments', label: 'PrivatePAY', icon: LockKeyhole },
+  { id: 'identity', label: 'Identity', icon: Fingerprint, group: 'Account' },
   { id: 'ask', label: 'Ask PDAO', icon: MessageCircle },
 ]
 const sectionMeta: Record<Section, { eyebrow: string; title: string; subtitle: string }> = {
@@ -45,6 +47,7 @@ const sectionMeta: Record<Section, { eyebrow: string; title: string; subtitle: s
   bots: { eyebrow: 'TRADING WORKSPACE', title: 'Your strategy, clearly set.', subtitle: 'Shape a policy, protect your secrets locally, and choose where to trade.' },
   wallet: { eyebrow: 'SELF CUSTODY', title: 'Your keys. Your world.', subtitle: 'Manage the wallets you control, with care.' },
   payments: { eyebrow: 'PRIVATEPAY', title: 'Payments, thoughtfully private.', subtitle: 'Prepare a payment from an exact provider quote.' },
+  identity: { eyebrow: 'IDENTITY & TRUST', title: 'Your identity, on your terms.', subtitle: 'Choose a verification or sign-in method when a service needs it.' },
   ask: { eyebrow: 'PDAO INTELLIGENCE', title: 'What would you like to know?', subtitle: 'Ask about markets, your wallet or the PDAO ecosystem.' },
 }
 
@@ -214,6 +217,7 @@ function App() {
         {section === 'wallet' && <Wallets onToast={setToast} standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={connectStandard} onConnectEvm={connectEvm} onDisconnectExternal={disconnectExternal} />}
         {section === 'bots' && <BotsWorkspace prices={prices} services={services} onToast={setToast} onNavigate={changeSection} />}
         {section === 'payments' && <Payments amount={amount} setAmount={setAmount} onToast={setToast} onNavigate={setSection} connectedWallets={connectedWallets} />}
+        {section === 'identity' && <Identity authenticated={isAuthenticated} onDockLogin={() => void loginWithRedirect({ authorizationParams: window.PDAO_CONFIG.auth0.dockConnection ? { connection: window.PDAO_CONFIG.auth0.dockConnection } : undefined, appState: { returnTo: window.location.pathname + window.location.hash } })} />}
         {section === 'ask' && <Ask onToast={setToast} />}
         <footer className="page-footer"><span>PrivateDAO Wallet <span className="footer-dot">·</span> Private by design <span className="footer-dot">·</span> <a href="/terms.html">Terms</a> <span className="footer-dot">·</span> <a href="/privacy.html">Privacy</a></span><span>Prices from CoinGecko <span className="footer-dot">·</span> {priceState === 'live' ? 'Updated just now' : 'Market feed status shown above'}</span></footer>
       </div>
@@ -223,6 +227,37 @@ function App() {
     {toast && <div className="toast" role="status"><span className="toast-mark"><Mark size={20} /></span>{toast}<button aria-label="Dismiss" onClick={() => setToast('')}><X size={15} /></button></div>}
     <button className="shortcut-trigger" aria-label="Keyboard shortcuts" onClick={() => setMenuOpen(!menuOpen)}><Command size={15} /></button>
     {featured && <span className="sr-only">Solana {money(featured.price)} {featured.change.toFixed(2)} percent 24 hour change</span>}
+  </div>
+}
+
+function Identity({ authenticated, onDockLogin }: { authenticated: boolean; onDockLogin: () => void }) {
+  const persona = window.PDAO_CONFIG.persona
+  const [personaState, setPersonaState] = useState<{ inquiryId: string; status: string } | null>(null)
+  const [ready, setReady] = useState(false)
+  const canStartPersona = Boolean(persona.templateId && persona.environmentId)
+
+  return <div className="identity-layout">
+    <section className="identity-hero card-surface">
+      <div className="identity-orbit"><div /><div /><span><Fingerprint size={31} /></span></div>
+      <div><span className="small-label">PRIVATE, USER-CHOSEN IDENTITY</span><h2>Proof without a heavier footprint.</h2><p>Keep everyday wallet use open. Bring a verified credential only when the service or account flow you choose asks for one.</p>
+        <div className="identity-pills"><span><ShieldCheck size={14} /> You choose when</span><span><LockKeyhole size={14} /> Wallet keys stay local</span></div>
+      </div>
+    </section>
+    <div className="identity-provider-grid">
+      <section className="identity-provider card-surface">
+        <div className="identity-provider-head"><span className="identity-provider-icon persona-icon">P</span><span className="service-live"><i /> PERSONA</span></div>
+        <h3>Identity verification</h3><p>Start a Persona inquiry for individual or business verification. It opens only when you choose it.</p>
+        {personaState ? <div className="identity-result"><span className="status-light live" /> Inquiry {personaState.status.replaceAll('_', ' ')}<code>{personaState.inquiryId}</code><small>Persona’s inquiry status is shown as returned; this app does not convert completion into approval.</small></div> : canStartPersona ? <div className="persona-frame-wrap">{!ready && <div className="persona-loading"><Fingerprint size={20} /> Preparing your private inquiry…</div>}<PersonaReact templateId={persona.templateId} environmentId={persona.environmentId} onReady={() => setReady(true)} onComplete={({ inquiryId, status }) => setPersonaState({ inquiryId, status })} onCancel={() => setReady(false)} /></div> : <div className="identity-configure"><span className="status-light" /><div><b>Persona is ready to connect</b><small>Set the public inquiry template and environment IDs in runtime configuration to launch your published Persona flow.</small></div></div>}
+        <div className="identity-provider-foot"><ShieldCheck size={14} /> Verification is an optional service choice, not a wallet-access requirement.</div>
+      </section>
+      <section className="identity-provider card-surface">
+        <div className="identity-provider-head"><span className="identity-provider-icon dock-icon">D</span><span className={`service-live ${authenticated ? '' : 'identity-muted'}`}><i /> {authenticated ? 'AUTHENTICATED' : 'DECENTRALIZED ID'}</span></div>
+        <h3>Dock Web3 ID</h3><p>Sign in with a DID from Dock Wallet through the Auth0 connection configured for this application.</p>
+        <div className="dock-flow"><span>01</span><div><b>Choose Dock in sign-in</b><small>Auth0 opens its Universal Login and returns to this wallet.</small></div><ArrowRight size={15} /><span>02</span><div><b>Approve with your Dock Wallet</b><small>Scan the QR and approve the DID credential in Dock.</small></div></div>
+        <button className="button-primary identity-action" onClick={onDockLogin}><Fingerprint size={16} /> Continue with Dock Web3 ID <ArrowUpRight size={15} /></button>
+        <div className="identity-provider-foot"><ShieldCheck size={14} /> DID sign-in shares a verifiable credential; it does not expose the wallet recovery phrase.</div>
+      </section>
+    </div>
   </div>
 }
 
