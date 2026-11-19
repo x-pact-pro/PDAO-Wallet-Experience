@@ -95,7 +95,7 @@ older `PDAO Wallet` Auth0 client was not modified.
 - Pump.fun, Moonshot, and other meme-venue connections are not live trading
   integrations yet. A DApp link is not an agent execution result.
 
-## Current handoff (r17 built; deployment pending)
+## Current handoff (r17 deployed)
 
 - The production hostname is not serving the new Atelier build yet. The old
   app association was removed and the new Amplify association is
@@ -104,9 +104,11 @@ older `PDAO Wallet` Auth0 client was not modified.
   distribution target. Route 53 is not authoritative.
 
 - r17 adds a persistent compact desktop sidebar and replaces the placeholder
-  support toast with a link to the new repository issue tracker. Web, Chrome MV3,
+  support toast with a link to the new repository issue tracker. Source commit
+  `6ded40b` is pushed to `main`; Amplify job `12` for app `d2iwf2bo6lci0r`
+  succeeded, and the live root/config/JS/CSS returned HTTP 200. Web, Chrome MV3,
   and Android debug builds succeeded. Artifacts and hashes are in
-  `docs/release-handoff.md`; r17 has not yet been pushed or deployed.
+  `docs/release-handoff.md`.
 - r16 source commit `b27218d` is pushed to `main` and deployed to the new AWS
   Amplify app `d2iwf2bo6lci0r` in `us-east-1` as job `10` (`SUCCEED`). The live
   root and runtime config returned HTTP 200; the published application bundle
