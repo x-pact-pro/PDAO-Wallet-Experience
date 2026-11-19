@@ -1,5 +1,20 @@
 # Release handoff
 
+## r27 — live Team Bot route discovery
+
+The Team Bots workspace now consumes the live Agent Exchange catalog when it
+assigns a route to a specialist. Each profile stores only the selected public
+service ID locally and shows whether its route was discovered; enabling a
+profile without an assigned route is refused. Route discovery does not create
+an agent client, issue a Descope token, sign a transaction, settle PrivatePAY,
+or transmit wallet keys. The existing Descope Resource binding remains
+pending and the Stockholm Agent Exchange contract is unchanged.
+
+`npm run build`, `npm run build:extension`, and the offline Android debug build
+passed after this change. The rebuilt APK was installed and launched on
+device `R58T33JGLHN` (package `org.privatedao.wallet`, target SDK 35); after a
+cleared crash buffer, no new Android crash was reported.
+
 ## r26 — current F-Droid source recipe and distribution artifacts
 
 The F-Droid recipe now pins the current source commit rather than the earlier
