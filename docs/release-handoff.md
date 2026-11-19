@@ -1,5 +1,32 @@
 # Release handoff
 
+## r25 — staging Auth0 release and physical Android launch verification
+
+Source commit `329e1b2200f869be626d19d768c9087add232ec0` keeps the new
+Atelier release explicitly marked `staging` while enabling the dedicated web
+and native Auth0 clients for the new Amplify preview and Android testing. It
+does not relabel the staging tenant as production, and the Chrome extension
+continues to avoid an unconfigured Auth0 callback.
+
+Amplify app `d2iwf2bo6lci0r` in `us-east-1` accepted the manual ZIP deployment
+as job `34` and returned `SUCCEED`. The public root and `pdao-config.js`
+returned HTTP 200; the served runtime config reports `environment: 'staging'`.
+The Stockholm Agent Exchange was not changed.
+
+The Android debug APK was rebuilt with target SDK 35, installed on the
+connected physical device `R58T33JGLHN`, and launched successfully. The
+package reports `org.privatedao.wallet`, `versionCode 2`, `minSdk 24`, and
+`targetSdk 35`. A post-launch screenshot shows the interactive welcome screen;
+the crash buffer was empty. Debug APK SHA-256:
+`6091a53c2afb18c1e2260f475d4ef097b04f45dffadc6a69e1c74e448726c660`.
+
+`npm run build`, `npm run build:extension`, `npm run lint`, the native Auth0
+callback checks, and the price-format regression checks completed. Lint still
+reports warnings from generated/vendor bundles and a small number of existing
+React purity rules; no lint error was reported. Descope Resource binding and
+client-token acceptance remain intentionally pending and `descope.enabled`
+stays false.
+
 ## r24 — accurate small-asset prices and first physical-device evidence
 
 Source `5156629` fixes the market ticker, overview, market table and alpha
