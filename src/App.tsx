@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import PersonaReact from 'persona-react'
+import { VersionedTransaction } from '@solana/web3.js'
 import type { Wallet as StandardWallet } from '@wallet-standard/base'
 import { checkRecoveryPhrase, createRecoveryPhrase } from './lib/mnemonic'
 import type { PreparedSolanaTransaction, WalletRecord } from './lib/walletVault'
@@ -211,7 +212,7 @@ function App() {
         <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-dot" />{currentMeta.eyebrow}</div><h1>{currentMeta.title}</h1><p>{currentMeta.subtitle}</p></div><div className="heading-utilities"><span className="secure-caption"><ShieldCheck size={15} /> Self-custody first</span><button className="icon-button quiet-button" aria-label="Collapse sidebar" onClick={() => setToast('Navigation is ready for your workspace.')}><PanelLeftClose size={18} /></button></div></div>
         {section === 'overview' && <Overview prices={prices} priceState={priceState} onNavigate={changeSection} refresh={refreshPrices} />}
         {section === 'markets' && <Markets prices={prices} state={priceState} refresh={refreshPrices} />}
-        {section === 'trade' && <Trade prices={prices} amount={amount} setAmount={setAmount} onToast={setToast} connectedWallets={connectedWallets} onNavigate={setSection} />}
+        {section === 'trade' && <Trade prices={prices} amount={amount} setAmount={setAmount} onToast={setToast} connectedWallets={connectedWallets} />}
         {section === 'alpha' && <Alpha prices={prices} state={priceState} onNavigate={changeSection} />}
         {section === 'exchange' && <Exchange services={filteredServices} state={serviceState} query={query} setQuery={setQuery} category={category} setCategory={setCategory} refresh={refreshServices} />}
         {section === 'wallet' && <Wallets onToast={setToast} standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={connectStandard} onConnectEvm={connectEvm} onDisconnectExternal={disconnectExternal} />}
@@ -303,11 +304,127 @@ function NetworkHealth() {
   return <section className="network-health card-surface"><div className="network-health-head"><div><span className="small-label">NETWORK CONNECTIVITY</span><h2>Across the ecosystem.</h2></div><button className="refresh-inline" onClick={() => void refresh()}><RefreshCw size={13} /> Refresh</button></div>{state === 'live' ? <div className="network-health-grid">{items.map(item => <article key={item.network} className="network-health-item"><span className={`network-health-dot ${item.status === 'rpc_healthy' ? 'healthy' : ''}`} /><div><b>{item.label ?? item.network.replaceAll('-', ' ')}</b><small>{item.status.replaceAll('_', ' ')}{item.cluster ? ` · ${item.cluster}` : ''}</small></div><span className="network-latency">{typeof item.latency_ms === 'number' ? `${item.latency_ms} ms` : '—'}</span></article>)}</div> : <div className="network-health-empty">{state === 'loading' ? 'Checking live network endpoints…' : 'Network health is unavailable.'} <button onClick={() => void refresh()}>Retry</button></div>}<div className="network-health-foot"><span>Read-only RPC checks</span><span>{observed ? `Updated ${observed}` : 'Status pending'}</span></div></section>
 }
 
-function Trade({ prices, amount, setAmount, onToast, connectedWallets, onNavigate }: { prices: Market[]; amount: string; setAmount: (s: string) => void; onToast: (s: string) => void; connectedWallets: ConnectedExternalWallet[]; onNavigate: (s: Section) => void }) {
-  const [from, setFrom] = useState('SOL'), [to, setTo] = useState('USDC')
-  const asset = prices.find(coin => coin.symbol === from)
-  const solanaWallet = connectedWallets.find((wallet): wallet is Extract<ConnectedExternalWallet, { chain: 'solana' }> => wallet.chain === 'solana')
-  return <div className="trade-layout"><section className="trade-panel card-surface"><div className="trade-heading"><div><span className="small-label">SWAP ASSETS</span><h2>From one asset to another.</h2></div><button className="icon-button"><RefreshCw size={16} /></button></div><div className="trade-input-card"><div className="trade-input-top"><span>You pay</span><span>Available balance <b>—</b></span></div><div className="trade-input-line"><input inputMode="decimal" value={amount} onChange={event => setAmount(event.target.value)} aria-label="Amount to trade" /><select value={from} onChange={event => setFrom(event.target.value)} aria-label="Asset to pay">{['SOL','ETH','USDC','BTC'].map(ticker => <option key={ticker}>{ticker}</option>)}</select></div><div className="trade-fiat">{asset && Number(amount) ? `≈ ${money(Number(amount) * asset.price)}` : 'Connect a wallet to see your balance'}</div></div><button className="swap-direction" aria-label="Reverse assets" onClick={() => { setFrom(to); setTo(from) }}><ArrowDownLeft size={17} /></button><div className="trade-input-card receive-card"><div className="trade-input-top"><span>You receive</span><span>Live quote required</span></div><div className="trade-input-line"><span className="receive-placeholder">—</span><select value={to} onChange={event => setTo(event.target.value)} aria-label="Asset to receive">{['USDC','SOL','ETH','BTC'].map(ticker => <option key={ticker}>{ticker}</option>)}</select></div><div className="trade-fiat">Output appears after a verified provider quote</div></div><div className="trade-details"><span>Network <b>Solana Mainnet</b></span><span>Price impact <b>—</b></span><span>Provider <b>Jupiter quote required</b></span></div>{solanaWallet ? <div className="trade-connected-wallet"><img src={solanaWallet.icon} alt="" /><span><b>{solanaWallet.name}</b><small>{solanaWallet.address.slice(0, 8)}…{solanaWallet.address.slice(-6)} · connected</small></span><i className="external-connected-dot" /></div> : <div className="trade-wallet-needed"><span>Connect a compatible Solana wallet to continue.</span><button className="text-action" onClick={() => onNavigate('wallet')}>View detected wallets <ArrowRight size={14} /></button></div>}<button className="button-primary trade-submit" onClick={() => solanaWallet ? onToast('Live swap routing is not connected in this app yet.') : onNavigate('wallet')}><ArrowLeftRight size={16} /> {solanaWallet ? 'Live swap route unavailable' : 'Connect a wallet'}</button><p className="trade-caption"><ShieldCheck size={14} /> No order is sent until you review and sign it in your wallet.</p></section><aside className="trade-aside card-surface"><span className="small-label">EXECUTION PRINCIPLES</span><div className="execution-item"><span><Activity size={18} /></span><div><b>Fresh quote</b><p>Route and amount come from the swap provider in real time.</p></div></div><div className="execution-item"><span><ShieldCheck size={18} /></span><div><b>You approve every step</b><p>Review the transaction and sign locally before it is submitted.</p></div></div><div className="execution-item"><span><LockKeyhole size={18} /></span><div><b>Your keys stay here</b><p>Private keys never leave your browser or device.</p></div></div><div className="aside-market"><div className="aside-market-head"><span>MARKET SNAPSHOT</span><span className="service-live"><i /> LIVE</span></div>{prices.slice(0,3).map(coin => <div className="aside-market-row" key={coin.id}><img src={coin.image} alt="" /><b>{coin.symbol}</b><span>{money(coin.price, coin.price < 1 ? 4 : 2)}</span><small className={coin.change >= 0 ? 'positive' : 'negative'}>{coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}%</small></div>)}</div></aside></div>
+type JupiterOrder = { transaction: string | null; requestId: string; inAmount?: string; outAmount?: string; router?: string; feeBps?: number; feeMint?: string; platformFee?: { amount?: string; feeBps?: number; feeMint?: string }; signatureFeePayer?: string; gasless?: boolean; transactionVersion?: number; lastValidBlockHeight?: number; expireAt?: string; errorCode?: number; errorMessage?: string }
+type JupiterExecution = { status: 'Success' | 'Failed'; signature?: string; code?: number; error?: string; totalInputAmount?: string; totalOutputAmount?: string }
+const swapAssets = {
+  SOL: { mint: 'So11111111111111111111111111111111111111112', decimals: 9 },
+  USDC: { mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6 },
+} as const
+
+function parseTokenAmount(value: string, decimals: number): string {
+  if (!/^\d+(\.\d*)?$/.test(value.trim())) throw new Error('Enter a valid positive amount.')
+  const [whole, fraction = ''] = value.trim().split('.')
+  if (fraction.length > decimals) throw new Error(`This asset supports up to ${decimals} decimal places.`)
+  const units = BigInt(whole) * 10n ** BigInt(decimals) + BigInt((fraction + '0'.repeat(decimals)).slice(0, decimals) || '0')
+  if (units <= 0n) throw new Error('Enter a positive amount.')
+  return units.toString()
+}
+
+function formatTokenAmount(value: string | undefined, decimals: number): string {
+  if (!value || !/^\d+$/.test(value)) return '—'
+  const units = BigInt(value), scale = 10n ** BigInt(decimals)
+  const whole = units / scale, fraction = (units % scale).toString().padStart(decimals, '0').slice(0, 6).replace(/0+$/, '')
+  return fraction ? `${whole}.${fraction}` : whole.toString()
+}
+
+function Trade({ prices, amount, setAmount, onToast, connectedWallets }: { prices: Market[]; amount: string; setAmount: (s: string) => void; onToast: (s: string) => void; connectedWallets: ConnectedExternalWallet[] }) {
+  const [from, setFrom] = useState<'SOL' | 'USDC'>('SOL')
+  const [to, setTo] = useState<'SOL' | 'USDC'>('USDC')
+  const [localWallets, setLocalWallets] = useState<WalletRecord[]>([])
+  const [payerId, setPayerId] = useState('')
+  const [passphrase, setPassphrase] = useState('')
+  const [order, setOrder] = useState<JupiterOrder | null>(null)
+  const [orderTime, setOrderTime] = useState(0)
+  const [accepted, setAccepted] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [execution, setExecution] = useState<JupiterExecution | null>(null)
+  const [outputAsset, setOutputAsset] = useState<'SOL' | 'USDC'>('USDC')
+
+  useEffect(() => { void import('./lib/walletVault').then(({ listWallets }) => listWallets()).then(setLocalWallets).catch(() => setLocalWallets([])) }, [])
+  const connectedSolana = connectedWallets.filter((wallet): wallet is Extract<ConnectedExternalWallet, { chain: 'solana' }> => wallet.chain === 'solana')
+  const selectedExternal = connectedSolana.find(wallet => `external:${wallet.id}` === payerId)
+  const selectedLocal = localWallets.find(wallet => `local:${wallet.id}` === payerId)
+  const payerAddress = selectedExternal?.address ?? selectedLocal?.solanaAddress ?? ''
+  const feeSponsored = Boolean(order?.gasless || (order?.signatureFeePayer && payerAddress && order.signatureFeePayer !== payerAddress))
+  const marketAsset = prices.find(coin => coin.symbol === from)
+
+  useEffect(() => {
+    if (!payerId) {
+      const preferred = connectedSolana[0] ? `external:${connectedSolana[0].id}` : localWallets[0] ? `local:${localWallets[0].id}` : ''
+      if (preferred) setPayerId(preferred)
+    }
+  }, [payerId, connectedSolana, localWallets])
+
+  const clearQuote = () => { setOrder(null); setExecution(null); setAccepted(false); setError('') }
+  const getQuote = async () => {
+    setBusy(true); setError(''); setOrder(null); setExecution(null); setAccepted(false)
+    try {
+      if (!payerAddress) throw new Error('Connect or select a Solana wallet first.')
+      const input = swapAssets[from], output = swapAssets[to]
+      const units = parseTokenAmount(amount, input.decimals)
+      const params = new URLSearchParams({ inputMint: input.mint, outputMint: output.mint, amount: units, taker: payerAddress, maxSupportedTransactionVersion: '0' })
+      const response = await fetch(`https://api.jup.ag/swap/v2/order?${params}`, { headers: { accept: 'application/json' } })
+      const body = await response.json() as JupiterOrder
+      if (!response.ok) throw new Error(body.errorMessage || `Jupiter quote returned ${response.status}.`)
+      if (!body.requestId || !body.transaction) throw new Error(body.errorMessage || `Jupiter could not build this route${body.errorCode ? ` (code ${body.errorCode})` : ''}.`)
+      const transaction = VersionedTransaction.deserialize(Uint8Array.from(atob(body.transaction), char => char.charCodeAt(0)))
+      if (transaction.version !== 0) throw new Error(`This wallet flow supports Solana v0 transactions; Jupiter returned version ${transaction.version}.`)
+      const signerKeys: string[] = transaction.message.staticAccountKeys.slice(0, transaction.message.header.numRequiredSignatures).map(key => String(key.toBase58()))
+      if (!signerKeys.includes(payerAddress)) throw new Error('The returned transaction does not require the selected wallet to sign.')
+      setOrder(body); setOrderTime(Date.now()); setOutputAsset(to)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not fetch a live Jupiter order.') }
+    finally { setBusy(false) }
+  }
+
+  const executeSwap = async () => {
+    if (!order?.transaction || !accepted || !payerAddress) return
+    if (Date.now() - orderTime > 25_000) { setError('This order is no longer fresh. Request a new live quote before signing.'); clearQuote(); return }
+    setBusy(true); setError('')
+    try {
+      const wire = Uint8Array.from(atob(order.transaction), char => char.charCodeAt(0))
+      const transaction = VersionedTransaction.deserialize(wire)
+      const requiredSigners: string[] = transaction.message.staticAccountKeys.slice(0, transaction.message.header.numRequiredSignatures).map(key => String(key.toBase58()))
+      if (!requiredSigners.includes(payerAddress)) throw new Error('The order signer no longer matches the selected wallet.')
+      const prepared: PreparedSolanaTransaction = { transactionBase64: order.transaction, version: 'v0', requiredSigners }
+      let signedTransaction: string
+      if (selectedExternal) signedTransaction = await signWithExternalSolanaWallet(selectedExternal, prepared)
+      else if (selectedLocal) signedTransaction = await (async () => {
+        const { signPreparedSolanaTransaction } = await import('./lib/walletVault')
+        return signPreparedSolanaTransaction(selectedLocal, passphrase, prepared, payerAddress)
+      })()
+      else throw new Error('Select a connected or local Solana signer.')
+
+      const response = await fetch('https://api.jup.ag/swap/v2/execute', {
+        method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ signedTransaction, requestId: order.requestId, lastValidBlockHeight: order.lastValidBlockHeight }),
+      })
+      const result = await response.json() as JupiterExecution
+      if (!response.ok) throw new Error(result.error || `Jupiter execution returned ${response.status}.`)
+      setExecution(result)
+      if (result.status !== 'Success' || result.code !== 0 || !result.signature) throw new Error(result.error || `Swap was not confirmed (Jupiter code ${result.code ?? 'unknown'}).`)
+      onToast('Jupiter confirmed the swap. The chain signature is available below.')
+      setPassphrase('')
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'The swap did not execute. No successful result was reported.') }
+    finally { setBusy(false) }
+  }
+
+  const outputDecimals = swapAssets[outputAsset].decimals
+  return <div className="trade-layout"><section className="trade-panel card-surface">
+    <div className="trade-heading"><div><span className="small-label">SOLANA MAINNET · JUPITER SWAP V2</span><h2>From one asset to another.</h2></div><button className="icon-button" aria-label="Refresh quote" onClick={getQuote} disabled={busy}><RefreshCw size={16} /></button></div>
+    <div className="trade-input-card"><div className="trade-input-top"><span>You pay</span><span>Network <b>Solana</b></span></div><div className="trade-input-line"><input inputMode="decimal" value={amount} onChange={event => { setAmount(event.target.value); clearQuote() }} aria-label="Amount to trade" /><select value={from} onChange={event => { setFrom(event.target.value as 'SOL' | 'USDC'); if (event.target.value === to) setTo(from === 'SOL' ? 'USDC' : 'SOL'); clearQuote() }} aria-label="Asset to pay"><option>SOL</option><option>USDC</option></select></div><div className="trade-fiat">{marketAsset && Number(amount) ? `≈ ${money(Number(amount) * marketAsset.price)}` : 'Live market value appears when available'}</div></div>
+    <button className="swap-direction" aria-label="Reverse assets" onClick={() => { setFrom(to); setTo(from); clearQuote() }}><ArrowDownLeft size={17} /></button>
+    <div className="trade-input-card receive-card"><div className="trade-input-top"><span>You receive</span><span>{order ? 'Jupiter estimate' : 'Live quote'}</span></div><div className="trade-input-line"><span className="receive-placeholder">{order ? formatTokenAmount(order.outAmount, outputDecimals) : '—'}</span><select value={to} onChange={event => { setTo(event.target.value as 'SOL' | 'USDC'); if (event.target.value === from) setFrom(to); clearQuote() }} aria-label="Asset to receive"><option>USDC</option><option>SOL</option></select></div><div className="trade-fiat">{order ? `Estimated ${to} from Jupiter · RTSE slippage` : 'Expected output appears after a fresh provider quote'}</div></div>
+    <div className="trade-details"><span>Route <b>{order?.router ?? 'All Jupiter routers'}</b></span><span>Provider fee <b>{order ? `${order.feeBps ?? 0} bps${order.platformFee?.feeBps != null ? ` · Jupiter ${order.platformFee.feeBps} bps` : ''}` : 'Shown in quote'}</b></span><span>Fee asset <b>{order?.feeMint === swapAssets.SOL.mint ? 'SOL' : order?.feeMint === swapAssets.USDC.mint ? 'USDC' : order?.feeMint ?? '—'}</b></span></div>
+    <label className="trade-payer-select">Signing wallet<select value={payerId} onChange={event => { setPayerId(event.target.value); clearQuote() }}><option value="">Select a Solana wallet</option>{connectedSolana.map(wallet => <option value={`external:${wallet.id}`} key={wallet.id}>{wallet.name} · {wallet.address.slice(0, 6)}…{wallet.address.slice(-5)}</option>)}{localWallets.map(wallet => <option value={`local:${wallet.id}`} key={wallet.id}>PrivateDAO local · {wallet.solanaAddress.slice(0, 6)}…{wallet.solanaAddress.slice(-5)}</option>)}</select>{payerAddress && <small>{payerAddress}</small>}</label>
+    {selectedLocal && <label className="trade-passphrase">Unlock this local wallet<input type="password" autoComplete="current-password" value={passphrase} onChange={event => setPassphrase(event.target.value)} placeholder="Vault passphrase" /></label>}
+    {order && <div className="swap-review"><div><span className="status-light live" /><b>Review this exact live order</b><small>{order.router ?? 'Jupiter route'} · {feeSponsored ? 'sponsored network fee' : 'network fees may apply'} · re-quote after 25 seconds</small></div><dl><dt>Input</dt><dd>{amount} {from}</dd><dt>Expected output</dt><dd>{formatTokenAmount(order.outAmount, outputDecimals)} {to}</dd><dt>Signature fee payer</dt><dd>{order.signatureFeePayer === payerAddress ? 'Your wallet' : order.signatureFeePayer ?? 'Jupiter quote'}</dd><dt>Transaction fee</dt><dd>{feeSponsored ? 'Sponsored / provider-paid' : 'Paid by signer as shown in wallet'}</dd></dl><label className="swap-review-check"><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} /> I reviewed the amount, route and fee details.</label></div>}
+    {error && <div className="form-error" role="alert">{error}</div>}
+    {execution?.signature && <div className={`swap-result ${execution.status === 'Success' ? 'success' : 'failed'}`}><b>{execution.status === 'Success' ? 'Swap confirmed on Solana' : 'Swap did not confirm'}</b><a href={`https://solscan.io/tx/${execution.signature}`} target="_blank" rel="noreferrer">View transaction on Solscan <ExternalLink size={13} /></a></div>}
+    {!order && <button className="button-primary trade-submit" onClick={() => void getQuote()} disabled={busy || !payerAddress || from === to}>{busy ? 'Fetching Jupiter route…' : !payerAddress ? 'Choose or connect a wallet' : 'Get live Jupiter quote'}{!busy && <ArrowRight size={16} />}</button>}
+    {order && <button className="button-primary trade-submit" onClick={() => void executeSwap()} disabled={busy || !accepted || Boolean(selectedLocal && !passphrase)}>{busy ? 'Waiting for wallet & Jupiter…' : 'Approve in wallet & execute'}<ArrowLeftRight size={16} /></button>}
+    <p className="trade-caption"><ShieldCheck size={14} /> The selected wallet signs locally. No transaction is sent before your approval.</p>
+  </section><aside className="trade-aside card-surface"><span className="small-label">LIVE EXECUTION</span><div className="execution-item"><span><Activity size={18} /></span><div><b>Competing routes</b><p>Jupiter returns the selected live router and quote details for this exact wallet and amount.</p></div></div><div className="execution-item"><span><ShieldCheck size={18} /></span><div><b>Wallet approval first</b><p>Review the app quote and your wallet’s own transaction approval before signing.</p></div></div><div className="execution-item"><span><LockKeyhole size={18} /></span><div><b>Keys stay on-device</b><p>External wallets sign in their own approval surface; local vault signing stays in this device.</p></div></div><div className="aside-market"><div className="aside-market-head"><span>MARKET SNAPSHOT</span><span className="service-live"><i /> LIVE</span></div>{prices.slice(0,3).map(coin => <div className="aside-market-row" key={coin.id}><img src={coin.image} alt="" /><b>{coin.symbol}</b><span>{money(coin.price, coin.price < 1 ? 4 : 2)}</span><small className={coin.change >= 0 ? 'positive' : 'negative'}>{coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}%</small></div>)}</div></aside></div>
 }
 
 function Alpha({ prices, state, onNavigate }: { prices: Market[]; state: string; onNavigate: (s: Section) => void }) {
