@@ -17,7 +17,7 @@
 
 ## Phase 4 — Payments and trading
 - [x] Payer-bound PrivatePAY x402 requirements quote with a readable exact-terms review card.
-- [ ] Canonical status view, local transaction preparation and inspection, wallet signing, verification, settlement, and confirmed receipt flow. Current implementation stops after the quote.
+- [x] Canonical status view, local transaction preparation and inspection, wallet signing, verification, explicit settlement confirmation, pending status handling, and confirmed provider receipt display.
 - [x] Responsive Trading workspace surfaces: local policy preferences, encrypted local bot-secret vault, team profiles, and external DApp directory.
 - [ ] Connect team profiles to authorized trading-agent APIs; add provider route discovery, quote/sign/receipt execution, and live status without exposing wallet secrets.
 

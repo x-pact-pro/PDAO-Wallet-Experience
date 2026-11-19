@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { checkRecoveryPhrase, createRecoveryPhrase } from './lib/mnemonic'
-import type { WalletRecord } from './lib/walletVault'
+import type { PreparedSolanaTransaction, WalletRecord } from './lib/walletVault'
 import {
   Activity, ArrowDownLeft, ArrowLeftRight, ArrowRight, ArrowUpRight,
   Bell, Bot, ChevronDown, CircleHelp, Command, Compass, ExternalLink,
@@ -17,7 +17,10 @@ type Market = { id: string; symbol: string; name: string; image: string; price: 
 type NetworkStatus = { network: string; label?: string; status: string; latency_ms?: number; provider?: string; cluster?: string; block_number?: string }
 type Service = { id?: string; name?: string; title?: string; description?: string; summary?: string; category?: string; price?: number | string; currency?: string; pricing?: unknown }
 type PrivatePayAccept = { scheme?: string; network?: string; asset?: string; amount?: string; payTo?: string; maxTimeoutSeconds?: number; extra?: Record<string, unknown> }
-type PrivatePayQuote = { request_id?: string; expires_at?: string; requirements?: { accepts?: PrivatePayAccept[]; resource?: { url?: string; description?: string } }; pdao?: { required?: boolean; selected?: boolean; status?: string } }
+type PrivatePayQuote = { request_id?: string; expires_at?: string; requirements?: { accepts?: PrivatePayAccept[]; resource?: { url?: string; description?: string; mimeType?: string } }; pdao?: { required?: boolean; selected?: boolean; status?: string }; public_disclosure?: string; provider_disclosure?: string }
+type PrivatePayPreparedResponse = { transaction_base64?: string; version?: 'legacy' | 'v0'; send_to?: 'base' | 'ephemeral'; required_signers?: string[]; recent_blockhash?: string; last_valid_block_height?: number; instruction_count?: number; provider_fees?: { lamports?: string; tokens?: string } | null; privacy_boundary?: string }
+type PrivatePayVerification = { isValid?: boolean; invalidReason?: string; payer?: string; [key: string]: unknown }
+type PrivatePaySettlement = { success?: boolean; pending?: boolean; transaction?: string; network?: string; payer?: string; [key: string]: unknown }
 
 const marketUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=true&price_change_percentage=24h'
 const navItems: { id: Section; label: string; icon: LucideIcon; group?: string }[] = [
@@ -274,7 +277,7 @@ function Wallets({ onToast }: { onToast: (s: string) => void }) {
       setVerifiedWalletId(selected.id)
       setPassphrase('')
       setFlow(null)
-      onToast('Passphrase verified on this device. Signing is not enabled in this build yet.')
+      onToast('Wallet unlocked locally. You can sign PrivatePAY transactions after reviewing their terms.')
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not unlock this wallet.') }
     finally { setBusy(false) }
   }
@@ -283,7 +286,7 @@ function Wallets({ onToast }: { onToast: (s: string) => void }) {
     catch { onToast('Clipboard access is unavailable in this context.') }
   }
 
-  return <div className="wallets-layout"><section className="wallet-intro card-surface"><div className="wallet-emblem"><Mark size={50} /></div><span className="small-label">SELF CUSTODY, MADE CLEAR</span><h2>{records.length ? 'Your wallet is yours.' : 'Begin with your own keys.'}</h2><p>Create a new wallet on this device or restore one you already control. Your recovery phrase is encrypted locally with your passphrase and never sent to a server.</p><div className="wallet-buttons"><button className="button-primary" onClick={beginCreate}><Plus size={16} /> Create a new wallet</button><button className="button-secondary" onClick={beginImport}><Wallet size={16} /> Import recovery phrase</button></div>{records.length > 0 && <div className="wallet-records">{records.map(record => <article className="wallet-record" key={record.id}><div className="record-heading"><span className="record-chain"><Mark size={24} /></span><div><b>PrivateDAO wallet</b><small>Created {new Date(record.createdAt).toLocaleDateString()}</small></div><button className="record-unlock" onClick={() => { setSelected(record); setFlow('unlock') }}>Verify passphrase</button></div><div className="address-line"><span><i className="solana-dot" /> Solana</span><code>{record.solanaAddress.slice(0, 8)}…{record.solanaAddress.slice(-6)}</code><button onClick={() => void copyAddress(record.solanaAddress, 'solana')} aria-label="Copy Solana address">{copyState === 'solana' ? 'Copied' : 'Copy'}</button></div><div className="address-line"><span><i className="evm-dot" /> EVM</span><code>{record.evmAddress.slice(0, 8)}…{record.evmAddress.slice(-6)}</code><button onClick={() => void copyAddress(record.evmAddress, 'evm')} aria-label="Copy EVM address">{copyState === 'evm' ? 'Copied' : 'Copy'}</button></div><div className="record-actions"><span>{verifiedWalletId === record.id ? <><i className="status-light live" /> Passphrase verified · signing unavailable</> : 'Encrypted on this device'}</span><button onClick={() => { if (window.confirm('Remove this encrypted wallet from this device? Make sure you have your recovery phrase backed up first.')) { void import('./lib/walletVault').then(({ removeWallet }) => removeWallet(record.id)).then(() => { setRecords(items => items.filter(item => item.id !== record.id)); if (verifiedWalletId === record.id) setVerifiedWalletId(null) }) } }}>Remove</button></div></article>)}</div>}</section><aside className="wallet-security card-surface"><span className="small-label">SECURITY MODEL</span><div className="security-seal"><ShieldCheck size={31} /></div><h3>Built around your custody.</h3><ul><li><span><ShieldCheck size={16} /></span><span><b>Keys stay on your device</b><small>Recovery phrase is encrypted locally before saving.</small></span></li><li><span><Fingerprint size={16} /></span><span><b>Local confirmation</b><small>Transaction signing is not enabled in this build.</small></span></li><li><span><LockKeyhole size={16} /></span><span><b>No cloud secret storage</b><small>Your unlock passphrase is never saved.</small></span></li></ul><div className="security-note">Keep your recovery phrase offline in a safe place. Anyone with it can control the wallet.</div></aside>
+  return <div className="wallets-layout"><section className="wallet-intro card-surface"><div className="wallet-emblem"><Mark size={50} /></div><span className="small-label">SELF CUSTODY, MADE CLEAR</span><h2>{records.length ? 'Your wallet is yours.' : 'Begin with your own keys.'}</h2><p>Create a new wallet on this device or restore one you already control. Your recovery phrase is encrypted locally with your passphrase and never sent to a server.</p><div className="wallet-buttons"><button className="button-primary" onClick={beginCreate}><Plus size={16} /> Create a new wallet</button><button className="button-secondary" onClick={beginImport}><Wallet size={16} /> Import recovery phrase</button></div>{records.length > 0 && <div className="wallet-records">{records.map(record => <article className="wallet-record" key={record.id}><div className="record-heading"><span className="record-chain"><Mark size={24} /></span><div><b>PrivateDAO wallet</b><small>Created {new Date(record.createdAt).toLocaleDateString()}</small></div><button className="record-unlock" onClick={() => { setSelected(record); setFlow('unlock') }}>Unlock wallet</button></div><div className="address-line"><span><i className="solana-dot" /> Solana</span><code>{record.solanaAddress.slice(0, 8)}…{record.solanaAddress.slice(-6)}</code><button onClick={() => void copyAddress(record.solanaAddress, 'solana')} aria-label="Copy Solana address">{copyState === 'solana' ? 'Copied' : 'Copy'}</button></div><div className="address-line"><span><i className="evm-dot" /> EVM</span><code>{record.evmAddress.slice(0, 8)}…{record.evmAddress.slice(-6)}</code><button onClick={() => void copyAddress(record.evmAddress, 'evm')} aria-label="Copy EVM address">{copyState === 'evm' ? 'Copied' : 'Copy'}</button></div><div className="record-actions"><span>{verifiedWalletId === record.id ? <><i className="status-light live" /> Wallet unlocked locally</> : 'Encrypted on this device'}</span><button onClick={() => { if (window.confirm('Remove this encrypted wallet from this device? Make sure you have your recovery phrase backed up first.')) { void import('./lib/walletVault').then(({ removeWallet }) => removeWallet(record.id)).then(() => { setRecords(items => items.filter(item => item.id !== record.id)); if (verifiedWalletId === record.id) setVerifiedWalletId(null) }) } }}>Remove</button></div></article>)}</div>}</section><aside className="wallet-security card-surface"><span className="small-label">SECURITY MODEL</span><div className="security-seal"><ShieldCheck size={31} /></div><h3>Built around your custody.</h3><ul><li><span><ShieldCheck size={16} /></span><span><b>Keys stay on your device</b><small>Recovery phrase is encrypted locally before saving.</small></span></li><li><span><Fingerprint size={16} /></span><span><b>Local confirmation</b><small>PrivatePAY is signed locally after its amount and recipient are shown.</small></span></li><li><span><LockKeyhole size={16} /></span><span><b>No cloud secret storage</b><small>Your unlock passphrase is never saved.</small></span></li></ul><div className="security-note">Keep your recovery phrase offline in a safe place. Anyone with it can control the wallet.</div></aside>
     {flow && <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closeFlow() }}><section className="wallet-modal card-surface" role="dialog" aria-modal="true" aria-labelledby="wallet-modal-title"><div className="modal-heading"><div><span className="small-label">LOCAL WALLET VAULT</span><h2 id="wallet-modal-title">{flow === 'create' ? 'Create your wallet' : flow === 'import' ? 'Restore your wallet' : 'Unlock your wallet'}</h2></div><button className="icon-button" aria-label="Close" onClick={closeFlow}><X size={18} /></button></div>{flow === 'create' && <><p className="modal-copy">Write these words down and keep them offline. This is the only recovery key to your wallet.</p><div className="phrase-grid">{phrase.split(' ').map((word, index) => <div key={`${word}-${index}`}><small>{String(index + 1).padStart(2, '0')}</small><b>{word}</b></div>)}</div><button className="phrase-copy" onClick={() => void navigator.clipboard.writeText(phrase).then(() => onToast('Recovery phrase copied. Clear your clipboard after saving it offline.')).catch(() => setError('Clipboard access failed. Write the words down manually.'))}>Copy recovery phrase <ArrowUpRight size={14} /></button><label className="backup-confirm"><input type="checkbox" checked={backupConfirmed} onChange={event => setBackupConfirmed(event.target.checked)} /><span>I’ve written the recovery phrase down and stored it offline.</span></label></>}{flow === 'import' && <><label className="modal-field">Recovery phrase<textarea value={phrase} onChange={event => setPhrase(event.target.value)} placeholder="Enter your 12 or 24 recovery words" rows={3} autoComplete="off" spellCheck={false} /></label><p className={`phrase-validity ${phrase.trim() ? checkRecoveryPhrase(phrase) ? 'valid' : 'invalid' : ''}`}>{phrase.trim() ? checkRecoveryPhrase(phrase) ? 'Recovery phrase verified' : 'Check the words and their order' : 'Phrase is processed on this device only'}</p></>}{flow !== 'unlock' && <><label className="modal-field">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} minLength={12} autoComplete="new-password" placeholder="At least 12 characters" /></label><p className="passphrase-hint">This passphrase encrypts the wallet on this device. It cannot recover a lost recovery phrase.</p></>}{flow === 'unlock' && <label className="modal-field">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} autoComplete="current-password" placeholder="Your wallet passphrase" onKeyDown={event => { if (event.key === 'Enter') void unlock() }} /></label>}{error && <div className="form-error" role="alert">{error}</div>}<div className="modal-actions"><button className="button-secondary" onClick={closeFlow}>Cancel</button>{flow === 'unlock' ? <button className="button-primary" onClick={() => void unlock()} disabled={!passphrase || busy}>{busy ? 'Unlocking…' : 'Unlock wallet'}</button> : <button className="button-primary" onClick={() => void submitWallet()} disabled={busy || passphrase.length < 12 || (flow === 'create' && !backupConfirmed) || (flow === 'import' && !checkRecoveryPhrase(phrase))}>{busy ? 'Encrypting…' : flow === 'create' ? 'Encrypt & save wallet' : 'Restore & encrypt'}</button>}</div></section></div>}
   </div>
 }
@@ -403,8 +406,15 @@ function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; 
   const [wallets, setWallets] = useState<WalletRecord[]>([])
   const [payerId, setPayerId] = useState('')
   const [quote, setQuote] = useState<PrivatePayQuote | null>(null)
+  const [prepared, setPrepared] = useState<PrivatePayPreparedResponse | null>(null)
+  const [paymentPayload, setPaymentPayload] = useState<Record<string, unknown> | null>(null)
+  const [verification, setVerification] = useState<PrivatePayVerification | null>(null)
+  const [settlement, setSettlement] = useState<PrivatePaySettlement | null>(null)
+  const [passphrase, setPassphrase] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [railState, setRailState] = useState<'loading' | 'live' | 'unavailable'>('loading')
+  const clearPayment = () => { setQuote(null); setPrepared(null); setPaymentPayload(null); setVerification(null); setSettlement(null); setPassphrase(''); setError('') }
   useEffect(() => {
     let active = true
     void import('./lib/walletVault').then(({ listWallets }) => listWallets()).then(records => {
@@ -414,9 +424,40 @@ function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; 
     }).catch(() => { if (active) setError('Local wallet storage is unavailable in this browser.') })
     return () => { active = false }
   }, [])
+  useEffect(() => {
+    let active = true
+    void fetch('https://agents.privatedao.org/api/privatepay/status', { headers: { accept: 'application/json' } })
+      .then(async response => { if (!response.ok) throw new Error('PrivatePAY status is unavailable.'); return response.json() as Promise<{ operational?: boolean; enabled?: boolean }> })
+      .then(status => { if (active) setRailState(status.operational === true && status.enabled === true ? 'live' : 'unavailable') })
+      .catch(() => { if (active) setRailState('unavailable') })
+    return () => { active = false }
+  }, [])
   const payer = wallets.find(wallet => wallet.id === payerId)
+  const resetForEdit = (action: () => void) => { action(); clearPayment() }
+  const postPrivatePay = async <T,>(path: 'requirements' | 'prepare' | 'verify' | 'settle', body: Record<string, unknown>): Promise<T> => {
+    const response = await fetch(`https://agents.privatedao.org/api/privatepay/x402/${path}`, {
+      method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify(body),
+    })
+    const result = await response.json().catch(() => ({})) as Record<string, unknown>
+    if (path === 'settle' && (response.status === 202 || response.status === 503)) return { ...result, pending: true } as T
+    if (!response.ok) {
+      const nested = result.error && typeof result.error === 'object' ? result.error as Record<string, unknown> : {}
+      const message = typeof result.message === 'string' ? result.message : typeof nested.message === 'string' ? nested.message : `PrivatePAY returned ${response.status}.`
+      throw new Error(message)
+    }
+    return result as T
+  }
+  const ensureQuoteFresh = () => {
+    if (quote?.expires_at && new Date(quote.expires_at).getTime() <= Date.now()) {
+      clearPayment()
+      setError('This quote has expired. Request a fresh quote to continue.')
+      return false
+    }
+    return true
+  }
+  const quoteIsFresh = !quote?.expires_at || new Date(quote.expires_at).getTime() > Date.now()
   const requestQuote = async () => {
-    setError(''); setQuote(null)
+    clearPayment()
     const match = amount.trim().match(/^(\d+)(?:\.(\d{1,6}))?$/)
     if (!match || !/^https:\/\//i.test(resource.trim()) || !provider.trim() || !payer) {
       setError(!payer ? 'Create or import a local wallet first so the quote is bound to its payer address.' : 'Enter a positive USDC amount, an HTTPS resource and a provider ID.')
@@ -426,12 +467,7 @@ function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; 
     if (baseUnits === '0') { setError('Enter an amount greater than zero.'); return }
     setBusy(true)
     try {
-      const response = await fetch('https://agents.privatedao.org/api/privatepay/x402/requirements', {
-        method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' },
-        body: JSON.stringify({ resource: resource.trim(), provider_id: provider.trim(), amount_base_units: baseUnits, payer: payer.solanaAddress, require_pdao_wallet: false }),
-      })
-      const result = await response.json() as PrivatePayQuote & { message?: string }
-      if (!response.ok) throw new Error(typeof result.message === 'string' ? result.message : `Quote request failed (${response.status}).`)
+      const result = await postPrivatePay<PrivatePayQuote>('requirements', { resource: resource.trim(), provider_id: provider.trim(), amount_base_units: baseUnits, payer: payer.solanaAddress, require_pdao_wallet: false })
       if (!result.requirements?.accepts?.length) throw new Error('The payment provider returned no usable payment requirements.')
       setQuote(result)
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not request a live quote.') }
@@ -439,12 +475,103 @@ function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; 
   }
   const accept = quote?.requirements?.accepts?.[0]
   const exactAmount = accept?.amount && /^\d+$/.test(accept.amount) ? `${(BigInt(accept.amount) / 1_000_000n).toString()}.${(BigInt(accept.amount) % 1_000_000n).toString().padStart(6, '0')} USDC` : null
+  const preparePayment = async () => {
+    if (!payer || !quote?.request_id || !accept?.payTo || !accept.amount || !ensureQuoteFresh()) return
+    setBusy(true); setError('')
+    try {
+      const result = await postPrivatePay<PrivatePayPreparedResponse>('prepare', {
+        phase: 'transfer', request_id: quote.request_id, payer: payer.solanaAddress,
+        owner: accept.payTo, amount_base_units: accept.amount,
+      })
+      if (!result.transaction_base64 || !result.version || !result.required_signers) throw new Error('The provider returned an incomplete signing request.')
+      setPrepared(result)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not prepare the private transfer.') }
+    finally { setBusy(false) }
+  }
+  const signAndVerify = async () => {
+    if (!payer || !quote?.requirements || !accept || !prepared || !passphrase || !ensureQuoteFresh()) return
+    setBusy(true); setError(''); setVerification(null); setPaymentPayload(null)
+    try {
+      const { signPreparedSolanaTransaction } = await import('./lib/walletVault')
+      const transactionBase64 = await signPreparedSolanaTransaction(payer, passphrase, {
+        transactionBase64: prepared.transaction_base64!,
+        version: prepared.version!,
+        requiredSigners: prepared.required_signers!,
+      } satisfies PreparedSolanaTransaction, payer.solanaAddress)
+      const payload: Record<string, unknown> = {
+        x402Version: 2,
+        resource: quote.requirements.resource,
+        accepted: accept,
+        payload: { transaction: transactionBase64 },
+      }
+      setPassphrase('')
+      const result = await postPrivatePay<PrivatePayVerification>('verify', {
+        x402Version: 2, paymentPayload: payload, paymentRequirements: accept,
+      })
+      if (result.isValid !== true) throw new Error(typeof result.invalidReason === 'string' ? result.invalidReason : 'The facilitator did not verify this payment. No settlement was requested.')
+      setPaymentPayload(payload)
+      setVerification(result)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not sign and verify this payment.') }
+    finally { setBusy(false) }
+  }
+  const settlePayment = async () => {
+    if (!paymentPayload || !verification || verification.isValid !== true || !accept || !ensureQuoteFresh()) return
+    setBusy(true); setError('')
+    try {
+      const result = await postPrivatePay<PrivatePaySettlement>('settle', {
+        x402Version: 2, paymentPayload, paymentRequirements: accept,
+      })
+      if (result.pending === true) { setSettlement(result); return }
+      if (result.success !== true) throw new Error('The provider did not return a confirmed settlement. Check the payment status before retrying.')
+      setSettlement(result)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Settlement was not confirmed. Check payment status before retrying.') }
+    finally { setBusy(false) }
+  }
   const copyPayTo = async () => {
     if (!accept?.payTo) return
     try { await navigator.clipboard.writeText(accept.payTo); onToast('Quoted recipient copied.') }
     catch { onToast('Clipboard access is unavailable in this context.') }
   }
-  return <div className="payments-layout"><section className="payment-intro"><span className="payment-eyebrow"><LockKeyhole size={15} /> PRIVATEPAY · X402</span><h2>Private payment,<br />from inside your wallet.</h2><p>Request a live quote and inspect its exact amount, network and recipient before continuing.</p><div className="payment-rail"><span className="rail-status"><i /> SOLANA MAINNET</span><div><b>PrivatePAY x402 operational</b><small>MagicBlock private settlement · quote-bound</small></div><ShieldCheck size={19} /></div><div className="payment-disclosure"><ShieldCheck size={17} /><span>Agent Exchange returns the quote and settlement requirements. A quote alone does not move funds.</span></div></section><section className="payment-form card-surface"><div className="payment-form-head"><span className="small-label">PREPARE A PAYMENT</span><span className="form-lock"><LockKeyhole size={14} /> LIVE QUOTE</span></div>{payer ? <label>Paying wallet<select value={payerId} onChange={event => { setPayerId(event.target.value); setQuote(null) }}>{wallets.map(wallet => <option key={wallet.id} value={wallet.id}>{wallet.solanaAddress.slice(0, 8)}…{wallet.solanaAddress.slice(-6)}</option>)}</select><small className="payer-address">{payer.solanaAddress}</small></label> : <div className="wallet-needed"><span>No local wallet is linked yet.</span><button className="text-action" onClick={() => onNavigate('wallet')}>Create or import wallet <ArrowUpRight size={14} /></button></div>}<label>Recipient resource<input value={resource} onChange={event => { setResource(event.target.value); setQuote(null) }} /></label><label>Provider ID<input value={provider} onChange={event => { setProvider(event.target.value); setQuote(null) }} /></label><label>Requested amount (USDC)<div className="amount-field"><input type="number" min="0" step="0.000001" value={amount} onChange={event => { setAmount(event.target.value); setQuote(null) }} /><span>USDC</span></div></label><button className="button-primary payment-quote" onClick={() => void requestQuote()} disabled={busy}>{busy ? 'Requesting live quote…' : <><ArrowRight size={16} /> Request exact quote</>}</button>{error && <div className="form-error" role="alert">{error}</div>}{quote && accept && <div className="quote-result" role="status"><div className="quote-result-heading"><i className="status-light live" /> Exact payment quote <span>{accept.scheme ?? 'x402'}</span></div><div className="quote-value">{exactAmount ?? 'Amount unavailable'}</div><div className="quote-detail-grid"><div><small>NETWORK</small><b>{accept.network ?? '—'}</b></div><div><small>SETTLEMENT</small><b>{String(accept.extra?.settlement ?? '—')}</b></div><div className="quote-recipient"><small>QUOTED RECIPIENT</small><code>{accept.payTo ?? '—'}</code>{accept.payTo && <button className="quote-copy" onClick={() => void copyPayTo()}>Copy</button>}</div><div><small>QUOTE EXPIRES</small><b>{quote.expires_at ? new Date(quote.expires_at).toLocaleString() : `${accept.maxTimeoutSeconds ?? '—'} seconds`}</b></div></div><div className="quote-reference"><span>Request</span><code>{quote.request_id ?? '—'}</code>{quote.pdao?.required && <span className="quote-pdao">PDAO required</span>}</div><p>Terms are bound to this quote. Payment requires wallet authorization and a confirmed settlement receipt.</p><details><summary>View complete provider response</summary><pre>{JSON.stringify(quote, null, 2)}</pre></details></div>}<div className="form-separator" /><div className="existing-link"><b>Check an existing payment link</b><p>Payment-link status lookup will be connected to the merchant checkout contract.</p><input placeholder="Paste an Agent Exchange payment link" /><button className="button-secondary" onClick={() => onToast('Payment-link status lookup is not connected in this app yet.')}>Check payment link <ArrowUpRight size={15} /></button></div></section></div>
+  return <div className="payments-layout">
+    <section className="payment-intro">
+      <span className="payment-eyebrow"><LockKeyhole size={15} /> PRIVATEPAY · X402</span>
+      <h2>Private payment,<br />from inside your wallet.</h2>
+      <p>Review the exact terms, sign on this device, then confirm settlement with the provider.</p>
+      <div className="payment-rail"><span className="rail-status"><i /> SOLANA MAINNET</span><div><b>{railState === 'live' ? 'PrivatePAY rail ready' : railState === 'loading' ? 'Checking PrivatePAY rail…' : 'PrivatePAY status unavailable'}</b><small>MagicBlock private settlement · live provider status</small></div><ShieldCheck size={19} /></div>
+      <div className="payment-disclosure"><ShieldCheck size={17} /><span>Your recovery phrase stays in the local wallet vault. The signed transaction is sent to the facilitator for verification; settlement is requested only after verification passes and you confirm.</span></div>
+      {quote?.public_disclosure && <div className="payment-disclosure"><LockKeyhole size={16} /><span>{quote.public_disclosure}</span></div>}
+      {quote?.provider_disclosure && <div className="payment-disclosure"><Eye size={16} /><span>{quote.provider_disclosure}</span></div>}
+    </section>
+    <section className="payment-form card-surface">
+      <div className="payment-form-head"><span className="small-label">PRIVATEPAY CHECKOUT</span><span className="form-lock"><LockKeyhole size={14} /> {railState === 'live' ? 'CONNECTED' : 'PROVIDER STATUS'}</span></div>
+      {payer ? <label>Paying wallet<select value={payerId} onChange={event => resetForEdit(() => setPayerId(event.target.value))}>{wallets.map(wallet => <option key={wallet.id} value={wallet.id}>{wallet.solanaAddress.slice(0, 8)}…{wallet.solanaAddress.slice(-6)}</option>)}</select><small className="payer-address">{payer.solanaAddress}</small></label> : <div className="wallet-needed"><span>No local wallet is linked yet.</span><button className="text-action" onClick={() => onNavigate('wallet')}>Create or import wallet <ArrowUpRight size={14} /></button></div>}
+      <label>Recipient resource<input value={resource} onChange={event => resetForEdit(() => setResource(event.target.value))} /></label>
+      <label>Provider ID<input value={provider} onChange={event => resetForEdit(() => setProvider(event.target.value))} /></label>
+      <label>Requested amount (USDC)<div className="amount-field"><input type="number" min="0" step="0.000001" value={amount} onChange={event => resetForEdit(() => setAmount(event.target.value))} /><span>USDC</span></div></label>
+      <button className="button-primary payment-quote" onClick={() => void requestQuote()} disabled={busy || !payer}>{busy ? 'Requesting…' : <><ArrowRight size={16} /> Request exact quote</>}</button>
+      {error && <div className="form-error" role="alert">{error}</div>}
+      {quote && accept && <div className="quote-result" role="status">
+        <div className="quote-result-heading"><i className="status-light live" /> Exact payment quote <span>{accept.scheme ?? 'x402'}</span></div>
+        <div className="quote-value">{exactAmount ?? 'Amount unavailable'}</div>
+        <div className="quote-detail-grid"><div><small>NETWORK</small><b>{accept.network ?? '—'}</b></div><div><small>SETTLEMENT</small><b>{String(accept.extra?.settlement ?? '—')}</b></div><div className="quote-recipient"><small>QUOTED RECIPIENT</small><code>{accept.payTo ?? '—'}</code>{accept.payTo && <button className="quote-copy" onClick={() => void copyPayTo()}>Copy</button>}</div><div><small>QUOTE EXPIRES</small><b>{quote.expires_at ? new Date(quote.expires_at).toLocaleString() : `${accept.maxTimeoutSeconds ?? '—'} seconds`}</b></div></div>
+        <div className="quote-reference"><span>Request</span><code>{quote.request_id ?? '—'}</code>{quote.pdao?.required && <span className="quote-pdao">PDAO required</span>}</div>
+        <p>This provider quote is immutable for this attempt. A payment is not complete until settlement returns a confirmed receipt.</p>
+        {!prepared && !verification && !settlement && <button className="button-secondary payment-step-button" onClick={() => void preparePayment()} disabled={busy || railState !== 'live'}>{busy ? 'Preparing transaction…' : 'Prepare private transfer'}</button>}
+        {prepared && !verification && !settlement && <div className="payment-step">
+          <div className="quote-detail-grid"><div><small>TRANSACTION</small><b>{prepared.version} · {prepared.send_to}</b></div><div><small>BLOCKHASH VALID THROUGH</small><b>{prepared.last_valid_block_height ?? '—'}</b></div><div><small>REQUIRED SIGNERS</small><code>{prepared.required_signers?.join(', ') ?? '—'}</code></div><div><small>INSTRUCTIONS</small><b>{prepared.instruction_count ?? 'Provider-built'}</b></div></div>
+          <label className="payment-passphrase">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} autoComplete="current-password" placeholder="Unlock locally to sign" onKeyDown={event => { if (event.key === 'Enter') void signAndVerify() }} /></label>
+          <p className="payment-step-note">Signing happens locally. The unchanged quote and signed transaction go to the facilitator for verification.</p>
+          <button className="button-primary payment-step-button" onClick={() => void signAndVerify()} disabled={busy || !passphrase}>{busy ? 'Signing and verifying…' : 'Sign locally & verify'}</button>
+        </div>}
+        {verification?.isValid === true && paymentPayload && !settlement && <div className="payment-step verified-step"><div><i className="status-light live" /> Facilitator verification passed</div><p>Confirm this exact payment to request settlement.</p><div className="quote-detail-grid"><div><small>AMOUNT</small><b>{exactAmount}</b></div><div><small>NETWORK</small><b>{accept.network}</b></div><div className="quote-recipient"><small>RECIPIENT</small><code>{accept.payTo}</code></div></div><button className="button-primary payment-step-button" onClick={() => void settlePayment()} disabled={busy || !quoteIsFresh}>{busy ? 'Settling payment…' : 'Confirm payment & settle'}</button></div>}
+        {settlement?.pending === true && !settlement.success && <div className="payment-step settlement-step"><div><i className="status-light" /> Settlement is still being confirmed</div><p>The provider returned a pending or temporarily unavailable status. This payment will not be submitted automatically again.</p>{settlement.transaction && <div className="quote-reference"><span>Transaction</span><code>{settlement.transaction}</code></div>}<button className="button-secondary payment-step-button" onClick={() => void settlePayment()} disabled={busy}>{busy ? 'Checking provider…' : 'Check settlement status'}</button></div>}
+        {settlement?.success === true && <div className="payment-step settlement-step"><div><i className="status-light live" /> Payment settled</div><p>Settlement confirmed by the provider.</p><div className="quote-detail-grid"><div><small>NETWORK</small><b>{settlement.network ?? accept.network ?? '—'}</b></div><div><small>PAYER</small><code>{settlement.payer ?? payer?.solanaAddress ?? '—'}</code></div><div className="quote-recipient"><small>SETTLEMENT SIGNATURE</small><code>{settlement.transaction ?? 'Provider receipt attached'}</code></div></div><details><summary>View provider receipt</summary><pre>{JSON.stringify(settlement, null, 2)}</pre></details></div>}
+        {prepared && <p className="payment-boundary-note">{prepared.privacy_boundary ?? 'Base-layer entry and exit may be visible. Private settlement is limited to the configured MagicBlock rail.'}</p>}
+        <details><summary>View complete provider quote</summary><pre>{JSON.stringify(quote, null, 2)}</pre></details>
+      </div>}
+      {quote && <button className="text-action payment-reset" onClick={clearPayment} disabled={busy}>Start a new payment</button>}
+    </section>
+  </div>
 }
 
 function Ask({ onToast }: { onToast: (s: string) => void }) {

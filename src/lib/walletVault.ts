@@ -3,6 +3,7 @@ import bs58 from 'bs58'
 import { mnemonicToSeed } from '@scure/bip39'
 import { HDNodeWallet } from 'ethers'
 import { derivePath } from 'ed25519-hd-key'
+import { Keypair, Transaction, VersionedTransaction } from '@solana/web3.js'
 import { checkRecoveryPhrase } from './mnemonic'
 
 const databaseName = 'pdao-wallet-vault-v1'
@@ -32,6 +33,12 @@ export type BotSecretRecord = {
   format: 1
 }
 
+export type PreparedSolanaTransaction = {
+  transactionBase64: string
+  version: 'legacy' | 'v0'
+  requiredSigners: string[]
+}
+
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(databaseName, 2)
@@ -52,6 +59,12 @@ function bytesToBase64(bytes: Uint8Array): string {
 
 function base64ToBytes(value: string): Uint8Array {
   return Uint8Array.from(atob(value), character => character.charCodeAt(0))
+}
+
+function copyToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength)
+  new Uint8Array(buffer).set(bytes)
+  return buffer
 }
 
 async function deriveEncryptionKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
@@ -96,15 +109,88 @@ export async function saveWallet(phraseInput: string, passphrase: string): Promi
   return record
 }
 
-export async function unlockWallet(record: WalletRecord, passphrase: string): Promise<string> {
+async function decryptWalletPhrase(record: WalletRecord, passphrase: string): Promise<string> {
+  let plaintext: Uint8Array | undefined
+  let ciphertext: Uint8Array | undefined
   try {
     const [salt, iv] = [base64ToBytes(record.salt), base64ToBytes(record.iv)]
     const key = await deriveEncryptionKey(passphrase, salt)
-    const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(iv).buffer }, key, new Uint8Array(base64ToBytes(record.ciphertext)).buffer)
+    ciphertext = base64ToBytes(record.ciphertext)
+    plaintext = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: copyToArrayBuffer(iv) }, key, copyToArrayBuffer(ciphertext)))
     const payload = JSON.parse(decoder.decode(plaintext)) as { phrase: string }
+    if (typeof payload.phrase !== 'string' || !checkRecoveryPhrase(payload.phrase)) throw new Error('Invalid wallet payload.')
     return payload.phrase
   } catch {
     throw new Error('The passphrase did not unlock this wallet.')
+  } finally {
+    plaintext?.fill(0)
+    ciphertext?.fill(0)
+  }
+}
+
+export async function unlockWallet(record: WalletRecord, passphrase: string): Promise<string> {
+  return decryptWalletPhrase(record, passphrase)
+}
+
+export async function signPreparedSolanaTransaction(
+  record: WalletRecord,
+  passphrase: string,
+  prepared: PreparedSolanaTransaction,
+  expectedPayer: string,
+): Promise<string> {
+  if (!prepared.transactionBase64 || !['legacy', 'v0'].includes(prepared.version)) {
+    throw new Error('The provider returned an unsupported transaction format.')
+  }
+  if (!Array.isArray(prepared.requiredSigners) || !prepared.requiredSigners.includes(expectedPayer)) {
+    throw new Error('The quoted wallet is not an authorized signer for this transaction.')
+  }
+
+  const phrase = await decryptWalletPhrase(record, passphrase)
+  const mnemonicSeed = await mnemonicToSeed(phrase)
+  const seedHex = Array.from(mnemonicSeed, byte => byte.toString(16).padStart(2, '0')).join('')
+  const derivedSeed = derivePath("m/44'/501'/0'/0'", seedHex).key
+  mnemonicSeed.fill(0)
+
+  let signer: Keypair | undefined
+  let signerSecret: Uint8Array | undefined
+  try {
+    signer = await Keypair.fromSeed(derivedSeed)
+    signerSecret = signer.secretKey
+    derivedSeed.fill(0)
+
+    const address = signer.publicKey.toBase58()
+    if (address !== record.solanaAddress || address !== expectedPayer) {
+      throw new Error('The unlocked wallet does not match the selected payer address.')
+    }
+
+    const encoded = prepared.transactionBase64.trim()
+    const wire = base64ToBytes(encoded)
+    if (bytesToBase64(wire) !== encoded) throw new Error('The provider transaction is not canonical Base64.')
+
+    if (prepared.version === 'legacy') {
+      const transaction = Transaction.from(wire)
+      const message = transaction.compileMessage()
+      const required: string[] = message.accountKeys.slice(0, message.header.numRequiredSignatures).map(key => String(key.toBase58()))
+      if (!required.includes(address) || !prepared.requiredSigners.every(key => required.includes(key))) {
+        throw new Error('The transaction signer set does not match the provider review.')
+      }
+      await transaction.partialSign(signer)
+      return bytesToBase64(await transaction.serialize({ requireAllSignatures: false, verifySignatures: true }))
+    }
+
+    const transaction = VersionedTransaction.deserialize(wire)
+    if (transaction.version !== 0) throw new Error('Only legacy and version 0 transactions are supported for this payment.')
+    const required = transaction.message.staticAccountKeys
+      .slice(0, transaction.message.header.numRequiredSignatures)
+      .map(key => String(key.toBase58()))
+    if (!required.includes(address) || !prepared.requiredSigners.every(key => required.includes(key))) {
+      throw new Error('The transaction signer set does not match the provider review.')
+    }
+    await transaction.sign([signer])
+    return bytesToBase64(transaction.serialize())
+  } finally {
+    signerSecret?.fill(0)
+    derivedSeed.fill(0)
   }
 }
 
