@@ -12,6 +12,7 @@
 - [x] Discover injected Solana wallets and register Android Mobile Wallet Adapter through Wallet Standard.
 - [x] Read native SOL and ETH balances for local and connected addresses on the explicit Solana and Ethereum mainnets, with partial and unavailable states.
 - [ ] Send native assets with exact local signing and chain confirmation.
+- [x] Read SPL Token and Token-2022 balances for Solana wallets with partial RPC coverage states; unknown mints are shown by address and are not assigned names or prices.
 
 ## Phase 3 — Live intelligence
 - [x] CoinGecko market tape, movement/volume sorting, local watchlist and unavailable states.

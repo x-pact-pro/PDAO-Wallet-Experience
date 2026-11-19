@@ -9,6 +9,22 @@ export type PortfolioBalance = {
   error?: string
 }
 
+export type SolanaTokenBalance = {
+  mint: string
+  amount: string
+  decimals: number
+  accounts: number
+  owners: number
+}
+
+type ParsedTokenAccount = { account?: { data?: { parsed?: { info?: { mint?: string; tokenAmount?: { amount?: string; decimals?: number } } } } } }
+type ParsedTokenAccountsResponse = { value: ParsedTokenAccount[] }
+
+const SOLANA_TOKEN_PROGRAMS = [
+  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+  'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+] as const
+
 const RPCS: Record<PortfolioNetwork, readonly string[]> = {
   'solana-mainnet': ['https://api.mainnet.solana.com', 'https://solana-rpc.publicnode.com'],
   'ethereum-mainnet': ['https://cloudflare-eth.com', 'https://ethereum-rpc.publicnode.com'],
@@ -94,4 +110,38 @@ export async function readPortfolioBalances(input: { solana: string[]; ethereum:
     readNetwork('ethereum-mainnet', input.ethereum),
   ])
   return results.filter((result): result is PortfolioBalance => result !== null)
+}
+
+export async function readSolanaTokenBalances(addressesInput: string[]): Promise<{ tokens: SolanaTokenBalance[]; addresses: number; checked: number; failed: number }> {
+  const addresses = [...new Set(addressesInput.filter(Boolean))]
+  const totals = new Map<string, { raw: bigint; decimals: number; accounts: number; owners: Set<string> }>()
+  const failures: string[] = []
+  await Promise.all(addresses.map(async address => {
+    const results = await Promise.allSettled(SOLANA_TOKEN_PROGRAMS.map(programId => rpc<ParsedTokenAccountsResponse>(
+      'solana-mainnet', 'getTokenAccountsByOwner', [address, { programId }, { commitment: 'confirmed', encoding: 'jsonParsed' }],
+    )))
+    let received = 0
+    for (const result of results) {
+      if (result.status === 'rejected') continue
+      received += 1
+      for (const entry of result.value.value ?? []) {
+        const info = entry.account?.data?.parsed?.info
+        const mint = info?.mint
+        const rawText = info?.tokenAmount?.amount
+        const decimals = info?.tokenAmount?.decimals
+        if (!mint || !rawText || !Number.isInteger(decimals) || !/^\d+$/.test(rawText)) continue
+        const current = totals.get(mint) ?? { raw: 0n, decimals: decimals!, accounts: 0, owners: new Set<string>() }
+        if (current.decimals !== decimals) continue
+        current.raw += BigInt(rawText)
+        current.accounts += 1
+        current.owners.add(address)
+        totals.set(mint, current)
+      }
+    }
+    if (received < SOLANA_TOKEN_PROGRAMS.length) failures.push(address)
+  }))
+  return { tokens: [...totals.entries()]
+    .filter(([, value]) => value.raw > 0n)
+    .map(([mint, value]) => ({ mint, amount: units(value.raw, value.decimals, Math.min(value.decimals, 8)), decimals: value.decimals, accounts: value.accounts, owners: value.owners.size }))
+    .sort((a, b) => a.mint.localeCompare(b.mint)), addresses: addresses.length, checked: addresses.length - failures.length, failed: failures.length }
 }

@@ -20,6 +20,24 @@ device-verified. The APK is not a release-signed F-Droid submission.
 The Vercel team grant has not been approved yet; there is no production URL for
 this new app at this handoff. The existing wallet domain was not changed.
 
+## Build r9 — Solana token balances
+
+Adds read-only balances for both the original SPL Token program and Token-2022.
+Balances aggregate by mint across local and connected Solana addresses. Unknown
+mints are identified by their shortened on-chain address; no unverified token
+name, logo, or dollar price is invented. Partial coverage is surfaced when an
+RPC cannot read one or more wallet/program combinations.
+
+Web, Chrome MV3, and Android debug builds all succeeded with Node 26 and the
+local Android toolchain. Android remains debug-signed and has not been checked
+on a physical device; these builds do not constitute an F-Droid release.
+
+| Artifact | SHA-256 |
+|---|---|
+| `PDAO-Wallet-Web-0.1.0-20261119-r9.zip` | `68e23d2e7f08caa2a9b4a0c61c78bcb2548f3cf9aa0ed52752bc9507dcad9d31` |
+| `PDAO-Wallet-Chrome-0.1.0-20261119-r9.zip` | `6548f8df74e7fda893f154855b4543d044ba7881a5854f4c36bafe3538fa3b94` |
+| `PDAO-Wallet-Android-debug-0.1.0-20261119-r9.apk` | `0f39856f5dd19c1e0d1bbd98722980884ece31d7edf5d6a1160d6cb7bd54c60a` |
+
 ## Build r8 — portfolio balance reads
 
 Source commit: `badaa67` on `main`.
