@@ -1,4 +1,4 @@
-import { StrictMode, useEffect } from 'react'
+import { StrictMode, useEffect, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Auth0Provider, useAuth0 } from '@auth0/auth0-react'
 import { App as CapacitorApp } from '@capacitor/app'
@@ -14,6 +14,7 @@ import '@fontsource/playfair-display/400.css'
 import '@fontsource/playfair-display/400-italic.css'
 import './index.css'
 import App from './App.tsx'
+import { isNativeAuthCallback } from './lib/authCallback'
 
 const auth0 = window.PDAO_CONFIG.auth0
 const nativeRuntime = Capacitor.isNativePlatform()
@@ -23,14 +24,17 @@ const callbackUri = nativeRuntime
 
 function NativeAuthRedirectHandler() {
   const { handleRedirectCallback } = useAuth0()
+  const lastCallback = useRef('')
   useEffect(() => {
     if (!nativeRuntime) return
     let active = true
     const handle = async (url: string) => {
+      if (!isNativeAuthCallback(url, auth0.nativeRedirectUri) || lastCallback.current === url) return
+      lastCallback.current = url
       try {
-        const callback = new URL(url)
-        if (!callback.searchParams.has('code') && !callback.searchParams.has('error')) return
         await handleRedirectCallback(url)
+      } catch {
+        window.dispatchEvent(new Event('pdao-auth-error'))
       } finally {
         await Browser.close().catch(() => undefined)
       }

@@ -94,6 +94,11 @@ function App() {
   const [amount, setAmount] = useState('0.10')
   const [menuOpen, setMenuOpen] = useState(false)
   const [toast, setToast] = useState('')
+  useEffect(() => {
+    const reportAuthError = () => setToast('Sign-in could not be completed. Please try again.')
+    window.addEventListener('pdao-auth-error', reportAuthError)
+    return () => window.removeEventListener('pdao-auth-error', reportAuthError)
+  }, [])
   const [standardWallets, setStandardWallets] = useState<readonly StandardWallet[]>([])
   const [evmProviders, setEvmProviders] = useState<EvmProviderOption[]>([])
   const [connectedWallets, setConnectedWallets] = useState<ConnectedExternalWallet[]>([])
