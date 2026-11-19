@@ -158,3 +158,4 @@
   .market-table .table-head span:nth-child(4){grid-column:3}
   .market-table .table-head span:nth-child(6){grid-column:4}
 }
+.service-card-link{width:27px;height:27px;border:1px solid var(--line);border-radius:7px;display:grid;place-items:center;background:rgba(255,255,255,.02);color:var(--gold);cursor:pointer;transition:background .2s ease,transform .2s ease}.service-card-link:hover,.service-card-link:focus-visible{background:rgba(215,201,158,.12);transform:translateY(-1px);outline:none}.service-card-link.is-unavailable{opacity:.38;cursor:default}
