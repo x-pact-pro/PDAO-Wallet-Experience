@@ -30,15 +30,14 @@ GitHub Pages is a secondary preview. Vercel is not the production target.
 
 ### Official hostname status
 
-`wallet.privatedao.org` belongs to the existing PDAO Wallet Amplify app
-`d1yr54h1b2l04l`; the `x-pact-pro/PDAO-Wallet` repository remains its source.
-The new Atelier app remains separately deployed at its Amplify hostname. The
-registrar's authoritative nameservers are Namecheap, not the AWS Route 53 zone
-in the account. The old Amplify domain association has been recreated and is
-waiting for the Namecheap CNAME to match its current target:
-`wallet CNAME d4uicyj0ogo9.cloudfront.net`. The currently authoritative CNAME
-still points to the previous CloudFront target, so do not claim the hostname
-cutover is complete. Auth0's Atelier web client now allows
+`wallet.privatedao.org` was served by the existing PDAO Wallet Amplify app
+`d1yr54h1b2l04l`; its source repository `x-pact-pro/PDAO-Wallet` remains
+unchanged. The intended hostname target is the new Atelier app
+`d2iwf2bo6lci0r`. Its Amplify domain association is `PENDING_VERIFICATION` and
+requires the Namecheap CNAME `wallet CNAME d3girmftahg4rp.cloudfront.net`.
+Namecheap is authoritative; the AWS Route 53 zone is not delegated. Its
+published CNAME still points to the former distribution, so the hostname
+cutover is not complete. Auth0's Atelier web client now allows
 `https://wallet.privatedao.org/auth/callback`, the origin, and logout URL; the
 older `PDAO Wallet` Auth0 client was not modified.
 
@@ -98,12 +97,11 @@ older `PDAO Wallet` Auth0 client was not modified.
 
 ## Current handoff (r16 deployed)
 
-- The production hostname is not serving the new Atelier build. The existing
-  PDAO Wallet Amplify app domain association was restored and is now
-  `AWAITING_APP_CNAME`. Namecheap still publishes the former CNAME target; set
-  `wallet` to `d4uicyj0ogo9.cloudfront.net` to restore that existing mapping.
-  Only after that is healthy should a planned cutover to Atelier use the new
-  app's own Amplify-provided CNAME. The Route 53 zone is not authoritative.
+- The production hostname is not serving the new Atelier build yet. The old
+  app association was removed and the new Amplify association is
+  `PENDING_VERIFICATION`, with target `wallet CNAME
+  d3girmftahg4rp.cloudfront.net`. Namecheap still publishes the former
+  distribution target. Route 53 is not authoritative.
 
 - r16 source commit `b27218d` is pushed to `main` and deployed to the new AWS
   Amplify app `d2iwf2bo6lci0r` in `us-east-1` as job `10` (`SUCCEED`). The live

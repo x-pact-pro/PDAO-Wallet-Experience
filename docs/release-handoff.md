@@ -5,14 +5,14 @@
 ### Official hostname routing
 
 The existing `x-pact-pro/PDAO-Wallet` repository is the source for the original
-Virginia Amplify app `d1yr54h1b2l04l`. The new `PDAO-Wallet-Experience` source
-uses app `d2iwf2bo6lci0r`; its r16 deployment remains live at the app's
-`amplifyapp.com` hostname. `wallet.privatedao.org` has not been moved to the
-new application.
+Virginia Amplify app `d1yr54h1b2l04l` and its code was not changed. The new
+`PDAO-Wallet-Experience` source uses app `d2iwf2bo6lci0r`; its r16 deployment
+remains live at the app's `amplifyapp.com` hostname. The intended custom-domain
+target is the new application.
 
-The old app's Amplify association currently awaits a Namecheap DNS CNAME update
-to `d4uicyj0ogo9.cloudfront.net`. The authoritative Namecheap CNAME still
-points at the prior distribution. The Route 53 hosted zone is not delegated for
+The new Amplify association is `PENDING_VERIFICATION`, waiting for Namecheap to
+set `wallet CNAME d3girmftahg4rp.cloudfront.net`. Namecheap still publishes the
+prior distribution target. The Route 53 hosted zone is not delegated for
 `privatedao.org`, so changes there do not update public DNS. Auth0's Atelier
 web client has the official callback/origin/logout URLs; the older PDAO Wallet
 Auth0 client is unchanged.
