@@ -2,6 +2,24 @@
 
 ## Current source and infrastructure status — 2026-11-19
 
+### r18 — quick navigation and truthful alerts
+
+Source commit `305f829` adds the Ctrl/⌘+K quick-navigation panel and removes
+the empty notification bell. Web, Chrome MV3, and Android target SDK 35 debug
+builds passed. Amplify manual deployment job `13` (`SUCCEED`) published the web
+build to app `d2iwf2bo6lci0r` in `us-east-1`; the live root, runtime config, JS,
+and CSS returned HTTP 200. The served JS includes the quick-navigation label
+and keyboard hint, and does not contain the former empty-alert message.
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Web-0.1.0-20261119-r18.zip` | `8f5d27c8f551dc8adb9af1c8e924601da06cb2a9ae2264dfc0ebc8ed5652e19b` | Amplify job `13` deployed; live assets verified |
+| `PDAO-Wallet-Chrome-0.1.0-20261119-r18.zip` | `8a2930e86c0a6b39dc03d860c10c29afbc8e67406c991f545711e3c972da3486` | Chrome MV3 build |
+| `PDAO-Wallet-Android-debug-0.1.0-20261119-r18.apk` | `a76936d72befdd40365b921da64ac48be86ac595979f11503050b20275f0ecfe` | Android target SDK 35 debug build |
+
+No browser screenshot, installed extension interaction, Android device,
+biometric flow, or funded transaction was verified in this release.
+
 ### r17 — functional workspace controls
 
 Source commit `6ded40b` adds a persistent compact sidebar for desktop and

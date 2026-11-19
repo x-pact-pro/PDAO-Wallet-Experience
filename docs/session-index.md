@@ -1,6 +1,6 @@
 # PDAO Wallet session index
 
-Updated: 2026-11-19 (r17). This index reconciles the original brief with the current
+Updated: 2026-11-19 (r18). This index reconciles the original brief with the current
 independent product, repositories, deployed AWS resources, and verified gaps.
 It is a navigation/handoff aid, not proof that unfinished product features are
 complete.
@@ -95,7 +95,7 @@ older `PDAO Wallet` Auth0 client was not modified.
 - Pump.fun, Moonshot, and other meme-venue connections are not live trading
   integrations yet. A DApp link is not an agent execution result.
 
-## Current handoff (r17 deployed)
+## Current handoff (r18 deployed)
 
 - The production hostname is not serving the new Atelier build yet. The old
   app association was removed and the new Amplify association is
@@ -109,6 +109,12 @@ older `PDAO Wallet` Auth0 client was not modified.
   succeeded, and the live root/config/JS/CSS returned HTTP 200. Web, Chrome MV3,
   and Android debug builds succeeded. Artifacts and hashes are in
   `docs/release-handoff.md`.
+- r18 adds a Ctrl/⌘+K quick-navigation panel and removes the empty alert bell.
+  Source commit `305f829` is pushed to `main`, Amplify job `13` succeeded, and
+  the live JS/CSS/runtime config returned HTTP 200. The web, Chrome MV3, and
+  Android target SDK 35 debug artifacts and hashes are recorded in
+  `docs/release-handoff.md`. No new browser screenshot or device-only flow was
+  verified.
 - r16 source commit `b27218d` is pushed to `main` and deployed to the new AWS
   Amplify app `d2iwf2bo6lci0r` in `us-east-1` as job `10` (`SUCCEED`). The live
   root and runtime config returned HTTP 200; the published application bundle
