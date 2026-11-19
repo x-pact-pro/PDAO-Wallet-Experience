@@ -29,6 +29,10 @@ reports existing warnings from generated/vendor files and React purity rules;
 there are no lint errors. No funded Mainnet transaction, Descope scoped-token
 acceptance, Chrome Web Store publication, or F-Droid acceptance is claimed.
 
+The repository now exposes the required verification commands directly as
+`npm run typecheck` and `npm test`; both are backed by the TypeScript project
+and the native Auth0 callback/price regression checks.
+
 ## r27 — live Team Bot route discovery
 
 The Team Bots workspace now consumes the live Agent Exchange catalog when it
