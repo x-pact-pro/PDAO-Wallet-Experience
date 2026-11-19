@@ -8,13 +8,13 @@
 
 ## Current rollout state
 
-The current Auth0 client belongs to the `dev-xojmajo443e15z7n` development
-tenant. `public/pdao-config.js` marks it as `environment: 'development'`.
-On `wallet.privatedao.org`, Chrome extension pages, and all Android app builds,
-the app refuses to start Auth0 or Dock redirects while that marker is not
-`production`; wallet connection and the rest of the app remain available. The
-development tenant is still usable on non-production browser previews and
-local origins. Do not flip the marker to bypass this guard.
+The current Auth0 clients belong to the `dev-xojmajo443e15z7n` tenant, which is
+shown as STAGING in the Auth0 dashboard. `public/pdao-config.js` marks this
+release as `environment: 'staging'`. The configured web and native callbacks are
+usable for staging previews and Android testing. The official production
+hostname remains a release boundary until a separately verified production
+tenant and clients are provisioned. Do not relabel the staging tenant as
+production or ship a production claim from this configuration.
 
 Before production sign-in is enabled, provision and verify the production
 Auth0 tenant and its separate web and native clients. Set the production

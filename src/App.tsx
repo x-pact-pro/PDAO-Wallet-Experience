@@ -78,7 +78,7 @@ function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, isLoading: authLoading } = useAuth0()
   const nativeAuth = Capacitor.isNativePlatform()
   const authConfig = window.PDAO_CONFIG.auth0
-  const authEnvironmentMismatch = authConfig.environment !== 'production' && (nativeAuth || window.location.hostname === authConfig.productionHostname || window.location.protocol === 'chrome-extension:')
+  const authEnvironmentMismatch = authConfig.environment === 'development' && (nativeAuth || window.location.hostname === authConfig.productionHostname || window.location.protocol === 'chrome-extension:')
   const authEnabled = authConfig.enabled && import.meta.env.BASE_URL !== './' && !authEnvironmentMismatch
   const nativeRedirectUri = window.PDAO_CONFIG.auth0.nativeRedirectUri
   const [section, setSection] = useState<Section>(() => (window.location.hash.replace('#', '') as Section) || 'overview')
