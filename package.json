@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "typecheck": "tsc -b --pretty false",
+    "test": "node --experimental-strip-types scripts/test-auth-callback.mjs && node --experimental-strip-types scripts/test-price-format.mjs",
     "build": "tsc -b && vite build",
     "build:extension": "tsc -b && vite build --config vite.config.extension.ts",
     "lint": "oxlint",
