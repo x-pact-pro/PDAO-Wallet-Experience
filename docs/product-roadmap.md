@@ -41,7 +41,8 @@
 - [x] Ask PDAO API integration with conversation history, current service catalog, provider errors, and no embedded paid-provider keys.
 
 ## Phase 6 — Distribution
-- [x] Chrome MV3 build and reproducible ZIP artifact. Browser installation review remains open.
+- [x] Chrome MV3 build, root-level ZIP, isolated Chrome 153 load, workspace navigation, live prices, and 390px no-overflow check.
+- [ ] Chrome Web Store publishing and interaction with an installed wallet provider.
 - [x] Capacitor Android app shell, Android MWA registration, SDK debug build, and APK checksum.
 - [x] F-Droid metadata draft and source-vendored Gradle recipe; Android release build succeeded from a clean clone.
 - [x] Add English store listing draft and launcher icon to source.
@@ -54,4 +55,5 @@
 - [x] Capture first-viewport mobile and desktop screenshots for all ten sections; verify no horizontal document overflow at 320, 360, 390, 768, 1024, and 1440 CSS pixels (r20 visual QA evidence).
 - [x] Build web, Chrome MV3, and Android target SDK 35 debug packages from the same source (r20); verify the web package is live on the new Amplify app.
 - [ ] Complete keyboard and assistive-technology accessibility review and security boundary review.
-- [ ] Verify published app and extension package; provide Android install artifact and F-Droid submission handoff.
+- [x] Verify the deployed web app and current Chrome extension package; provide Android release APK and build evidence.
+- [ ] Complete Android device review and F-Droid tooling/submission handoff.

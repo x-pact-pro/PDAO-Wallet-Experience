@@ -65,16 +65,15 @@ older `PDAO Wallet` Auth0 client was not modified.
 - Verified live: `/health` returns 200; identity without a bearer token returns
   401. Descope has no API Resource or agentic client yet; its FGA schema is
   empty. Acceptance of a valid audience/scope token is not verified.
-- Context recovery check (2026-11-19): the Descope MCP operation catalog
-  exposes the `CreateResource` schema under `connect_write`, but the executable
-  `connect_write` tool enum omits that operation, so it cannot be invoked
-  through that tool. A direct read of the official Descope Management API using
-  the supplied local management key was denied by Cloudflare Error 1010
-  (`browser_signature_banned`); the request was not retried. No Descope
-  configuration was changed and no key value was printed. Resume by creating
-  the API Resource in Descope Console (or through a working official MCP/API
-  path), with the exact gateway audience URI and `agent.identity.read` scope,
-  then configure an approved client and verify both allowed and rejected JWTs.
+- On 2026-11-19, after the user explicitly approved the exact
+  `connect_write.CreateResource` operation, Descope write elevation succeeded
+  in the `PrivateDAO` project. The MCP connector then rejected the operation
+  locally because `CreateResource` is missing from its executable operation
+  enum; no Resource was created. An earlier direct Management API attempt was
+  blocked by Cloudflare Error 1010 (`browser_signature_banned`) and was not
+  retried. No key value was printed. Continue through the Descope Console or a
+  corrected official MCP path, then configure an approved client and verify
+  allowed and rejected JWTs.
 - Do not turn on `descope.enabled` or claim “secured by Descope” until the
   Resource, client policy/grant, and positive/negative token checks pass.
 - Existing Agent Exchange/x402 payment requests remain governed by their
