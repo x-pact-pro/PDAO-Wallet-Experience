@@ -14,12 +14,22 @@ not bundled as a module.
 
 | Artifact | SHA-256 | State |
 |---|---|---|
-| `PDAO-Wallet-Web-0.1.0-20261119-r20.zip` | `8b1c3c22f87b3c80adb927e27b22b5235e0d068280833f1c00b6f163aff4accb` | Built; web deployment pending |
-| `PDAO-Wallet-Chrome-0.1.0-20261119-r20.zip` | `092ea6f6ef963b3c6ba8b8bbb49a7afe24e85bd7d7754db08483a9b4f51ce7c5` | Built; install interaction pending |
+| `PDAO-Wallet-Web-0.1.0-20261119-r20.zip` | `a7ecb230820375bd24835567e6fbdab3d715beccf1fc37cce834234d994a961d` | Amplify job `16` succeeded; root/runtime/JS/CSS returned HTTP 200 |
+| `PDAO-Wallet-Chrome-0.1.0-20261119-r20.zip` | `492fe0ac74b96f2ad7ff2b2b06254a25c1ca1b3d165442631520568287917575` | Root-level MV3 package; ZIP verified; install interaction pending |
 | `PDAO-Wallet-Android-debug-0.1.0-20261119-r20.apk` | `2c14fc0aa8e87d44f8537aa031deb811659af5db3d6957e6eca6765367116965` | Built; debug-signed, not F-Droid/release-signed |
 
 Artifacts are in `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/`. The
 Android APK remains for local device review only; it is not a store release.
+APK metadata confirms package `org.privatedao.wallet`, minimum SDK 24, target
+SDK 35, and compile SDK 36. `apksigner` reports the Android debug certificate;
+no Android device is currently attached. The Chrome archive has `manifest.json`
+and `index.html` at its root, and its ZIP integrity check passed; extension
+installation and live wallet-provider interaction remain unverified.
+The first manual ZIP upload (job `15`) placed the `dist/` directory itself at
+the hosting root and returned 404 there. The bundle was repacked with site
+files at the archive root and redeployed as job `16`; the published root and
+all referenced runtime and static assets then returned HTTP 200. The live
+`walletVault` chunk contains the plaintext-buffer cleanup.
 
 ### r20 — all-section visual and responsive evidence
 

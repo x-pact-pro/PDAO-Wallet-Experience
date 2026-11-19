@@ -1,6 +1,6 @@
 # PDAO Wallet session index
 
-Updated: 2026-11-19 (r20 QA). This index reconciles the original brief with the current
+Updated: 2026-11-19 (r20). This index reconciles the original brief with the current
 independent product, repositories, deployed AWS resources, and verified gaps.
 It is a navigation/handoff aid, not proof that unfinished product features are
 complete.
@@ -95,8 +95,15 @@ older `PDAO Wallet` Auth0 client was not modified.
 - Pump.fun, Moonshot, and other meme-venue connections are not live trading
   integrations yet. A DApp link is not an agent execution result.
 
-## Current handoff (r19)
+## Current handoff (r20)
 
+- r20 source commit `f42e642` includes plaintext-buffer zeroization on wallet
+  persistence success and error paths. Web, Chrome MV3, and Android target 35
+  debug builds succeeded. The corrected root-level web archive deployed to
+  new Amplify app `d2iwf2bo6lci0r` in `us-east-1` as job `16` (`SUCCEED`);
+  public root, runtime config, and referenced JS/CSS returned HTTP 200, and
+  the published wallet-vault chunk contains the cleanup logic. Artifacts and
+  hashes are in `docs/release-handoff.md`.
 - r20 visual QA captured the first viewport of all ten tabs at 390x844 and
   1440x900 and measured all ten at 320, 360, 390, 768, 1024, and 1440 CSS
   pixels. All 60 settled views had document/body widths equal to the viewport;

@@ -49,5 +49,6 @@
 
 ## Phase 7 — Verification and handoff
 - [x] Capture first-viewport mobile and desktop screenshots for all ten sections; verify no horizontal document overflow at 320, 360, 390, 768, 1024, and 1440 CSS pixels (r20 visual QA evidence).
-- [ ] Complete keyboard and assistive-technology accessibility review, current build checks, and security boundary review.
+- [x] Build web, Chrome MV3, and Android target SDK 35 debug packages from the same source (r20); verify the web package is live on the new Amplify app.
+- [ ] Complete keyboard and assistive-technology accessibility review and security boundary review.
 - [ ] Verify published app and extension package; provide Android install artifact and F-Droid submission handoff.
