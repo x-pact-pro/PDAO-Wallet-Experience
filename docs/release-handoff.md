@@ -1,5 +1,24 @@
 # Release handoff
 
+## r26 — current F-Droid source recipe and distribution artifacts
+
+The F-Droid recipe now pins the current source commit rather than the earlier
+Android preview commit. The offline Gradle release build completed from the
+tracked Android project with `223 actionable tasks` and exit 0. The resulting
+unsigned release APK is not directly installable; F-Droid signs accepted
+builds centrally.
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Android-release-unsigned-0.1.1-r25.apk` | `5e8d6f4395219d2c8fb26b871b54665579d7afa423187521c138d9ca2503cc8c` | Release build, target SDK 35, unsigned |
+| `PDAO-Wallet-Android-debug-0.1.1-r25.apk` | `6091a53c2afb18c1e2260f475d4ef097b04f45dffadc6a69e1c74e448726c660` | Debug build installed and launched on the connected device |
+| `PDAO-Wallet-Chrome-0.1.1-r25.zip` | `98b95fa242f9f30d7f15821b70d9f564cf167c014ee0b317df0822081f41ae4d` | Root-level MV3 package; build passed |
+
+Artifacts and `SHA256SUMS.txt` are in
+`/home/x-pact/Desktop/PDAO-Wallet-Deliverables/r25-0.1.1/`. This does not
+claim F-Droid acceptance or Chrome Web Store publication; both still require
+their respective maintainer/store review.
+
 ## r25 — staging Auth0 release and physical Android launch verification
 
 Source commit `329e1b2200f869be626d19d768c9087add232ec0` keeps the new

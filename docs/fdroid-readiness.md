@@ -9,9 +9,9 @@ plugin metadata, Cordova bridge project, and four Gradle module sources are
 tracked in Git. The F-Droid Gradle step can therefore resolve local Capacitor
 projects without `node_modules` or npm access.
 
-The root `.fdroid.yml` describes version `0.1.0` (`versionCode: 1`) and uses
+The root `.fdroid.yml` describes version `0.1.1` (`versionCode: 2`) and uses
 `android/` with Gradle's release task. Its build commit is the full source SHA
-`d38902b7951e157e679ecb4f946fee1ed29e35f7`. An offline `assembleRelease`
+`4b625040517d22bb82d018d460a6ecf76fd80b64`. An offline `assembleRelease`
 build from a clean clone of that commit succeeded with Android SDK 35/36
 installed locally and without `node_modules` or a project `local.properties`.
 This verifies the tracked Gradle source path; it is not a bit-for-bit
