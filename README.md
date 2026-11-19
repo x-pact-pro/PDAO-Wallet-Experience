@@ -38,7 +38,7 @@ cd android
 
 ## Distribution
 
-The web app is hosted in AWS Amplify `us-east-1` at https://main.d2iwf2bo6lci0r.amplifyapp.com/. GitHub Pages remains a secondary preview. See `fastlane/metadata/android/en-US` for the F-Droid listing draft. Android builds are debug APKs until signed for release.
+The web app is hosted in AWS Amplify `us-east-1` at https://main.d2iwf2bo6lci0r.amplifyapp.com/. GitHub Pages remains a secondary preview. See `fastlane/metadata/android/en-US` for the F-Droid listing draft and `.fdroid.yml` for the source-build recipe. A local unsigned release APK now builds offline; it is not directly installable and has not been submitted to F-Droid. F-Droid would build and sign its accepted source.
 
 ## License
 
