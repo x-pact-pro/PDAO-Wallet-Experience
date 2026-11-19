@@ -2,6 +2,29 @@
 
 ## Current source and infrastructure status — 2026-11-19
 
+### r21 — reproducible Android source build and F-Droid metadata
+
+Commit `5951f71115b422d38aea94c72387f597207fd66d` tracks the Capacitor
+runtime/plugin inputs required for an offline Android Gradle build. The root
+`.fdroid.yml` recipe points to that full source commit. The release variant
+built offline with target SDK 35; it is unsigned and has not been installed on
+a device or submitted to F-Droid.
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Android-release-unsigned-0.1.0-20261119-r21.apk` | `c3dc09b1422c102aadd9a691ca7b2c08e5b3a9d4c263598487e68083454c49ab` | Offline release build; unsigned; not directly installable |
+
+The original `x-pact-pro/PDAO-Wallet` remains paired with the original
+Amplify app `d1yr54h1b2l04l` in `us-east-1`. This release belongs only to
+`x-pact-pro/PDAO-Wallet-Experience` and the separate Wallet Atelier app
+`d2iwf2bo6lci0r`.
+
+The official hostname `wallet.privatedao.org` is intended for the Wallet
+Atelier app. Amplify currently requests `wallet CNAME
+d3girmftahg4rp.cloudfront.net`, while public DNS still resolves to
+`d16o6udopifxas.cloudfront.net`; the domain association remains
+`AWAITING_APP_CNAME`. No DNS record was changed in this release.
+
 ### r20 — local plaintext cleanup and distribution builds
 
 `src/lib/walletVault.ts` now clears the temporary UTF-8 recovery-phrase buffer

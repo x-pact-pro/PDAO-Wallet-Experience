@@ -1,0 +1,28 @@
+Categories:
+  - Finance
+  - Internet
+AntiFeatures:
+  - NonFreeNet
+License: MIT
+WebSite: https://wallet.privatedao.org
+SourceCode: https://github.com/x-pact-pro/PDAO-Wallet-Experience
+IssueTracker: https://github.com/x-pact-pro/PDAO-Wallet-Experience/issues
+Summary: Self-custody wallet with multi-network portfolio and market tools
+Description: |
+  A self-custody wallet for managing on-chain assets, viewing live market
+  information, and preparing wallet-authorized transactions.
+
+  Private keys and recovery phrases are encrypted and kept on the user's
+  device. Network features use public blockchain RPC endpoints and published
+  service APIs.
+RepoType: git
+Repo: https://github.com/x-pact-pro/PDAO-Wallet-Experience
+Builds:
+  - versionName: 0.1.0
+    versionCode: 1
+    commit: 5951f71115b422d38aea94c72387f597207fd66d
+    subdir: android
+    gradle: yes
+UpdateCheckMode: RepoManifest/main
+CurrentVersion: 0.1.0
+CurrentVersionCode: 1

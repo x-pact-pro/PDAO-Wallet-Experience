@@ -1,6 +1,6 @@
 # PDAO Wallet session index
 
-Updated: 2026-11-19 (r20). This index reconciles the original brief with the current
+Updated: 2026-11-19 (r21). This index reconciles the original brief with the current
 independent product, repositories, deployed AWS resources, and verified gaps.
 It is a navigation/handoff aid, not proof that unfinished product features are
 complete.
@@ -23,21 +23,21 @@ by the repository and deployment map below.
 
 | Project | Source | Hosting | Rule |
 |---|---|---|---|
-| Existing PDAO Wallet | `x-pact-pro/PDAO-Wallet`; historical local app `d1yr54h1b2l04l` | Existing AWS Amplify app in `us-east-1` | Keep unchanged during work on the new app. |
+| Existing PDAO Wallet | `x-pact-pro/PDAO-Wallet` (original repository) | Original AWS Amplify app `d1yr54h1b2l04l` in `us-east-1` | This is the pre-existing wallet project; keep separate from Atelier. |
 | New Wallet Atelier | `x-pact-pro/PDAO-Wallet-Experience`; local `/home/x-pact/PDAO-Wallet-Atelier` | New Amplify app `d2iwf2bo6lci0r`, `us-east-1` | Shared source for web, Chrome, and Android. Auto-build is off; deploy manually. |
 
 GitHub Pages is a secondary preview. Vercel is not the production target.
 
 ### Official hostname status
 
-`wallet.privatedao.org` was served by the existing PDAO Wallet Amplify app
-`d1yr54h1b2l04l`; its source repository `x-pact-pro/PDAO-Wallet` remains
-unchanged. The intended hostname target is the new Atelier app
+`wallet.privatedao.org` is the official wallet hostname. The original
+`x-pact-pro/PDAO-Wallet` repository remains paired with its original Amplify
+app `d1yr54h1b2l04l`; the intended hostname target is the new Atelier app
 `d2iwf2bo6lci0r`. Its Amplify domain association is `PENDING_VERIFICATION` and
 requires the Namecheap CNAME `wallet CNAME d3girmftahg4rp.cloudfront.net`.
 Namecheap is authoritative; the AWS Route 53 zone is not delegated. Its
-published CNAME still points to the former distribution, so the hostname
-cutover is not complete. Auth0's Atelier web client now allows
+published CNAME currently resolves to `d16o6udopifxas.cloudfront.net`, so the
+hostname cutover is incomplete. Auth0's Atelier web client now allows
 `https://wallet.privatedao.org/auth/callback`, the origin, and logout URL; the
 older `PDAO Wallet` Auth0 client was not modified.
 

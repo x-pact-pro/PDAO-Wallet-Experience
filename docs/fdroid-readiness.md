@@ -12,8 +12,8 @@ the synchronized assets with `npm run build && npx cap sync android` for each
 release.
 
 The root `.fdroid.yml` describes version `0.1.0` (`versionCode: 1`) and uses
-`android/` with Gradle's release task. Its build commit is recorded as a full
-Git SHA. The unsigned release APK was built offline with `assembleRelease`;
+`android/` with Gradle's release task. Its build commit is the full source SHA
+`5951f71115b422d38aea94c72387f597207fd66d`. The unsigned release APK was built offline with `assembleRelease`;
 the APK includes the app ID, SDK 24 minimum, target SDK 35, and the synchronized
 web runtime. This verifies a local offline source build, not a clean F-Droid
 build-server run.
