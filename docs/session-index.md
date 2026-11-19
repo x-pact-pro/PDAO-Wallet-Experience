@@ -1,6 +1,6 @@
 # PDAO Wallet session index
 
-Updated: 2026-11-19 (r14). This index reconciles the original brief with the current
+Updated: 2026-11-19 (r15). This index reconciles the original brief with the current
 independent product, repositories, deployed AWS resources, and verified gaps.
 It is a navigation/handoff aid, not proof that unfinished product features are
 complete.
@@ -82,7 +82,24 @@ GitHub Pages is a secondary preview. Vercel is not the production target.
 - Pump.fun, Moonshot, and other meme-venue connections are not live trading
   integrations yet. A DApp link is not an agent execution result.
 
-## Current handoff (r14 deployed)
+## Current handoff (r15 deployed)
+
+- r15 source commit `9aaa490` is pushed to `main` and deployed to the new AWS
+  Amplify app `d2iwf2bo6lci0r` in `us-east-1` as job `9` (`SUCCEED`). The live
+  root, runtime config, application JS, and styles returned HTTP 200. The live
+  bundle contains the EVM account-change and Solana unregister handling.
+- r15 keeps provider connection state in sync: Solana provider registration
+  and removal are both observed; EVM account changes, chain changes, and
+  disconnects update or clear the connected-wallet record. All three builds
+  succeeded (web, Chrome MV3, Android debug). No wallet-funded transaction or
+  physical-device test was performed.
+- r15 artifacts are under `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/`:
+  - Web ZIP SHA-256: `2f40abed373bae0963f75e27c3c36ad17847c4c3623706651bb5ce140dd33396`
+  - Chrome ZIP SHA-256: `6163f3f28a328e68b0edceea49b13b262b4f35114290a080e924d668f6691185`
+  - Android debug APK SHA-256: `68776f3b220cb4331fb90ec291c3d79ff3d56914e070f81116a544525411a94e`
+- Android remains a debug APK using target SDK 35, not a release-signed
+  F-Droid build. Browser installation, hardware-wallet and biometric/passkey
+  journeys remain open work.
 
 - r14 is deployed to Amplify app `d2iwf2bo6lci0r` in `us-east-1` by job `8`
   (SUCCEED, 2026-11-19). The public page and `/pdao-config.js` both returned

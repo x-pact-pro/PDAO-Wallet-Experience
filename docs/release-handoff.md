@@ -2,6 +2,26 @@
 
 ## Current source and infrastructure status — 2026-11-19
 
+### r15 — live wallet-provider state
+
+Source commit: `9aaa490` on `main`; deployed to AWS Amplify Virginia
+(`us-east-1`) with manual deployment job `9` (`SUCCEED`). The published root,
+runtime config, JavaScript, and CSS returned HTTP 200; the live application
+bundle contains the provider lifecycle updates.
+
+Solana discovery now refreshes on both Wallet Standard registration and
+unregistration. EVM connections follow `accountsChanged`, `chainChanged`, and
+`disconnect`, updating the connected account/network or clearing stale
+connections. The web, Chrome MV3, and Android debug builds succeeded. This is
+build and hosting verification; it does not claim a funded transaction or
+physical Android device validation.
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Web-0.1.0-20261119-r15.zip` | `2f40abed373bae0963f75e27c3c36ad17847c4c3623706651bb5ce140dd33396` | Amplify job `9` deployed; live assets verified |
+| `PDAO-Wallet-Chrome-0.1.0-20261119-r15.zip` | `6163f3f28a328e68b0edceea49b13b262b4f35114290a080e924d668f6691185` | Chrome MV3 production build |
+| `PDAO-Wallet-Android-debug-0.1.0-20261119-r15.apk` | `68776f3b220cb4331fb90ec291c3d79ff3d56914e070f81116a544525411a94e` | Android SDK 35 debug build; not release-signed |
+
 ### r14 — native SOL and ETH sends
 
 Source commit: `f6da731` on `main`; deployed on AWS Amplify Virginia

@@ -10,8 +10,9 @@
 ## Phase 2 — Local custody
 - [x] Generate/import BIP39 recovery phrases; derive Solana and EVM addresses; encrypt the phrase locally with WebCrypto; verify the passphrase.
 - [x] Discover injected Solana wallets and register Android Mobile Wallet Adapter through Wallet Standard.
+- [x] Keep external wallet state synchronized: Solana registration/removal and EVM account, chain, and disconnect events (r15).
 - [x] Read native SOL and ETH balances for local and connected addresses on the explicit Solana and Ethereum mainnets, with partial and unavailable states.
-- [ ] Send native assets with exact local signing and chain confirmation (SOL/ETH flows are implemented in r14; a funded Mainnet transaction and Android device confirmation remain unverified).
+- [x] Implement native SOL/ETH send forms with exact preview, local/provider signing, submission, and confirmation polling (r14); funded Mainnet and Android device validation remain unverified.
 - [x] Read SPL Token and Token-2022 balances for Solana wallets with partial RPC coverage states; unknown mints are shown by address and are not assigned names or prices.
 
 ## Phase 3 — Live intelligence
@@ -23,7 +24,7 @@
 - [x] Canonical status view, local transaction preparation and inspection, wallet signing, verification, explicit settlement confirmation, pending status handling, and confirmed provider receipt display.
 - [x] Responsive Trading workspace surfaces: local policy preferences, encrypted local bot-secret vault, team profiles, and external DApp directory.
 - [ ] Connect team profiles to authorized trading-agent APIs; add provider route discovery, quote/sign/receipt execution, and live status without exposing wallet secrets.
-- [ ] Add actual native SOL/ETH send flows with exact preview, wallet-local signature, and chain-confirmed receipt.
+- [ ] Validate native SOL/ETH sending with an actual wallet provider and Android device; capture chain-confirmed receipts without misrepresenting build checks as funded E2E evidence.
 - [ ] Add verified trade-provider routes (including meme-launch venues) with live provider quotes and user-controlled signing; do not label DApp launchers as bot execution.
 - [ ] Define paid AI/trading plans and usage commissions, then implement automatic PDAO conversion and treasury settlement only through an exact quoted route, verified destination, and on-chain receipt. Agent Exchange prices remain live catalog data; PrivatePAY keeps its provider-defined terms.
 
