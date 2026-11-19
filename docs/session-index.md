@@ -1,6 +1,6 @@
 # PDAO Wallet session index
 
-Updated: 2026-11-19 (r18). This index reconciles the original brief with the current
+Updated: 2026-11-19 (r19). This index reconciles the original brief with the current
 independent product, repositories, deployed AWS resources, and verified gaps.
 It is a navigation/handoff aid, not proof that unfinished product features are
 complete.
@@ -95,7 +95,16 @@ older `PDAO Wallet` Auth0 client was not modified.
 - Pump.fun, Moonshot, and other meme-venue connections are not live trading
   integrations yet. A DApp link is not an agent execution result.
 
-## Current handoff (r18 deployed)
+## Current handoff (r19)
+
+- Repository mapping is explicit: `x-pact-pro/PDAO-Wallet` is the original
+  repository for the existing Amplify app `d1yr54h1b2l04l`; this separate
+  product build is `x-pact-pro/PDAO-Wallet-Experience` and Amplify app
+  `d2iwf2bo6lci0r` in Virginia (`us-east-1`). Do not confuse or overwrite them.
+- r19 responsive inspection covered all ten sections at widths 320, 360, 390,
+  768, 1024, and 1440 CSS pixels. Overview cards and Agent Exchange now stay
+  within the viewport; the market preview scrolls within its card on phones.
+  Browser evidence is recorded in `docs/release-handoff.md`.
 
 - The production hostname is not serving the new Atelier build yet. The old
   app association was removed and the new Amplify association is

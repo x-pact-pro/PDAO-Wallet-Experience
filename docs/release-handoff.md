@@ -2,6 +2,29 @@
 
 ## Current source and infrastructure status — 2026-11-19
 
+### Repository ownership
+
+`x-pact-pro/PDAO-Wallet` is the original wallet repository associated with the
+existing Amplify production app `d1yr54h1b2l04l` in `us-east-1`. This work is
+being built separately in `x-pact-pro/PDAO-Wallet-Experience` (local checkout
+`/home/x-pact/PDAO-Wallet-Atelier`) and its separate Amplify app
+`d2iwf2bo6lci0r`. Keep the repositories and deployments distinct.
+
+### r19 — narrow-screen layout corrections
+
+Responsive inspection of all ten app sections at 320, 360, 390, 768, 1024,
+and 1440 CSS pixels found and corrected intrinsic grid overflow in the Overview
+cards and Agent Exchange layout. The Overview market preview now scrolls within
+its own card on narrow screens. Every section's document width matched its
+viewport at each inspected size. This is browser layout evidence; it does not
+verify wallet signing, biometrics, payments, or native Android rendering.
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Web-0.1.0-20261119-r19.zip` | `26d5a0ac324d6b36d12b51f88d32cb77ee8e27bed951ec6c707e7acc68040337` | Built; deployment pending |
+| `PDAO-Wallet-Chrome-0.1.0-20261119-r19.zip` | `7ad9239966fdeca09ab3671755abd38331ab8aafaf82bd5bafdada8181865315` | Chrome MV3 build; ZIP integrity checked |
+| `PDAO-Wallet-Android-debug-0.1.0-20261119-r19.apk` | `af7479c023c0377c284b5e31960a069eb1eed7bf3d9a4331d39a52539531e986` | Android target SDK 35 debug build; not release-signed |
+
 ### r18 — quick navigation and truthful alerts
 
 Source commit `305f829` adds the Ctrl/⌘+K quick-navigation panel and removes

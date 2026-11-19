@@ -8,6 +8,7 @@
 - [x] Build an interactive welcome screen and responsive application shell with eight sections and policy/legal footer.
 - [x] Implement a persistent compact desktop navigation state and route the support link to the new repository issue tracker (r17).
 - [x] Add a keyboard-accessible quick navigation panel and remove the empty notification indicator (r18).
+- [x] Keep every section within phone, tablet, and desktop viewport widths; add an in-card market preview scroll for the 320px layout (r19).
 
 ## Phase 2 — Local custody
 - [x] Generate/import BIP39 recovery phrases; derive Solana and EVM addresses; encrypt the phrase locally with WebCrypto; verify the passphrase.
