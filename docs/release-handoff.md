@@ -2,6 +2,29 @@
 
 ## Current source and infrastructure status — 2026-11-19
 
+### r16 — manual wallet-provider rescan
+
+Source commit: `b27218d` on `main`; deployed to AWS Amplify Virginia
+(`us-east-1`) with manual job `10` (`SUCCEED`). The public root and
+`/pdao-config.js` returned HTTP 200. The live JavaScript and CSS assets also
+returned HTTP 200, and the application bundle contains “Scan for wallets again”
+and `eip6963:requestProvider`.
+
+The Wallets workspace offers a manual rescan for Solana Wallet Standard and
+injected/EIP-6963 EVM providers, including silent recovery of prior provider
+authorization. Desktop/mobile browser UI inspection included 390x844; no wallet
+provider was connected or interacted with. Provider availability depends on
+the browser/extension and chain support.
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Web-0.1.0-20261119-r16.zip` | `4f79548b80b95074c71cf665668e0597e42ff3b591eac2a6a33b05763031efbe` | Amplify job `10` deployed; live JS/CSS verified |
+| `PDAO-Wallet-Chrome-0.1.0-20261119-r16.zip` | `047ca17a9bcbbfadce452a68826518c45ef74575bf420f181710f2afb6a9c658` | Chrome MV3 production build |
+| `PDAO-Wallet-Android-debug-0.1.0-20261119-r16.apk` | `06746c73942a7b2c5f46b987b395cba1985ba3bd4894969d8531bfc713e6d1a0` | Android SDK 35 debug build; not release-signed |
+
+No funded transaction, connected-wallet interaction, physical-device test,
+or biometric/passkey journey was performed.
+
 ### r15 — live wallet-provider state
 
 Source commit: `9aaa490` on `main`; deployed to AWS Amplify Virginia

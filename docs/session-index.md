@@ -1,6 +1,6 @@
 # PDAO Wallet session index
 
-Updated: 2026-11-19 (r15). This index reconciles the original brief with the current
+Updated: 2026-11-19 (r16). This index reconciles the original brief with the current
 independent product, repositories, deployed AWS resources, and verified gaps.
 It is a navigation/handoff aid, not proof that unfinished product features are
 complete.
@@ -82,7 +82,26 @@ GitHub Pages is a secondary preview. Vercel is not the production target.
 - Pump.fun, Moonshot, and other meme-venue connections are not live trading
   integrations yet. A DApp link is not an agent execution result.
 
-## Current handoff (r15 deployed)
+## Current handoff (r16 deployed)
+
+- r16 source commit `b27218d` is pushed to `main` and deployed to the new AWS
+  Amplify app `d2iwf2bo6lci0r` in `us-east-1` as job `10` (`SUCCEED`). The live
+  root and runtime config returned HTTP 200; the published application bundle
+  includes the manual wallet-provider rescan control and EIP-6963 refresh.
+- Wallets now have a visible “Scan for wallets again” action. Rescan refreshes
+  Solana Wallet Standard announcements and checks injected/EIP-6963 EVM
+  providers, while preserving the existing connection recovery behavior.
+  This is a discovery affordance, not universal wallet support. Responsive
+  browser inspection covered 390x844; no provider interaction was performed.
+- Web, Chrome MV3, and Android debug builds succeeded. Artifacts are in
+  `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/`:
+  - Web ZIP SHA-256: `4f79548b80b95074c71cf665668e0597e42ff3b591eac2a6a33b05763031efbe`
+  - Chrome ZIP SHA-256: `047ca17a9bcbbfadce452a68826518c45ef74575bf420f181710f2afb6a9c658`
+  - Android debug APK SHA-256: `06746c73942a7b2c5f46b987b395cba1985ba3bd4894969d8531bfc713e6d1a0`
+- Android is still a target SDK 35 debug APK, not release-signed/F-Droid-ready.
+  No physical device, biometric/passkey flow, or funded transaction was tested.
+
+### Previous: r15 deployed
 
 - r15 source commit `9aaa490` is pushed to `main` and deployed to the new AWS
   Amplify app `d2iwf2bo6lci0r` in `us-east-1` as job `9` (`SUCCEED`). The live
