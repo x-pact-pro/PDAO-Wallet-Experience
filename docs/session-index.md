@@ -72,14 +72,15 @@ GitHub Pages is a secondary preview. Vercel is not the production target.
 - Pump.fun, Moonshot, and other meme-venue connections are not live trading
   integrations yet. A DApp link is not an agent execution result.
 
-## Current handoff (r12 build candidate)
+## Current handoff (r12 deployed)
 
 - Most recent pushed commit before current agent-gateway work:
   `09b618f` (mobile market table and desktop navigation).
 - Current local changes include the gateway CloudFormation template, truthful
   Descope status branding, runtime API origin, and identity documentation.
-  Web, Chrome, and Android r12 builds succeeded; changes still need commit,
-  push, and an Amplify release.
+  Web, Chrome, and Android r12 builds succeeded. Source is pushed at
+  `94d0441`; Amplify deployment job `6` succeeded and live page/config returned
+  HTTP 200.
 - Current r12 artifacts are under
   `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/`:
   - Web ZIP SHA-256: `6f60085551dd2aa407752bc10b488c82cb529731f8b8534ee5f71f060d5e73ad`
@@ -87,8 +88,8 @@ GitHub Pages is a secondary preview. Vercel is not the production target.
   - Android debug APK SHA-256: `efb921a37f895b685ce65c4185e7828874a801a6f879f5b9146bc2ecd0334cb9`
 - Android uses `targetSdkVersion = 35`, `compileSdkVersion = 36`, and the new
   repo's Gradle project. It is a debug APK, not a release/F-Droid build.
-- The currently published UI is r11. The Descope gateway is deployed, but r12
-  UI/docs edits have not reached Amplify yet.
+- The currently published UI is r12. Descope gateway deployment is live;
+  Descope Resource/client grants and scoped-token verification remain pending.
 
 ## Remaining work, in priority order
 
