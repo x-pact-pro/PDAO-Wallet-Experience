@@ -10,11 +10,11 @@ handoff statement that the new app had no production URL. Vercel is not the
 deployment target. GitHub Pages is a secondary preview only.
 
 Latest packaged artifacts for the r13 design pass (built on Node 26.13.1;
-web deployment pending):
+web deployed to Amplify job `7`, status `SUCCEED`, in `us-east-1`):
 
 | Artifact | SHA-256 | State |
 |---|---|---|
-| `PDAO-Wallet-Web-0.1.0-20261119-r13.zip` | `143f1217a24c94dee641fc8bf65ce752c96fbfa445227316de8085d67a843845` | Web build; r13 Amplify release pending |
+| `PDAO-Wallet-Web-0.1.0-20261119-r13.zip` | `143f1217a24c94dee641fc8bf65ce752c96fbfa445227316de8085d67a843845` | Published to Amplify job `7`; page and runtime config HTTP 200 |
 | `PDAO-Wallet-Chrome-0.1.0-20261119-r13.zip` | `2731df07d0d1eefdeac0770f3c441b0bd764d44b4dd30076116c5283b2700621` | MV3 package |
 | `PDAO-Wallet-Android-debug-0.1.0-20261119-r13.apk` | `87382097b455679a98364b6fdfda1665a69f0fe59266bcb019ae8d6c293362d9` | Debug APK, target SDK 35; not release-signed |
 
@@ -24,7 +24,7 @@ A separate Descope agent identity gateway is deployed from
 200 and `GET /v1/agent/identity` returned 401 without a token. The Descope
 Resource and agent clients are not yet configured, so a valid scoped token has
 not been accepted. The gateway status UI remains explicit about the pending Descope Resource/client
-grants. The r12 deployment is live; this r13 UI release remains pending.
+grants. r13 is live at https://main.d2iwf2bo6lci0r.amplifyapp.com/; the root page and `/pdao-config.js` both returned HTTP 200.
 
 For the complete project map and remaining objective checklist, see
 [`session-index.md`](session-index.md).
