@@ -4,14 +4,15 @@ import { checkRecoveryPhrase, createRecoveryPhrase } from './lib/mnemonic'
 import type { WalletRecord } from './lib/walletVault'
 import {
   Activity, ArrowDownLeft, ArrowLeftRight, ArrowRight, ArrowUpRight,
-  Bell, ChevronDown, CircleHelp, Command, Compass, Fingerprint,
-  LayoutDashboard, LockKeyhole, Menu, MessageCircle, PanelLeftClose,
-  Plus, RefreshCw, Search, ShieldCheck, Sparkles, Star, Wallet, X,
+  Bell, Bot, ChevronDown, CircleHelp, Command, Compass, ExternalLink,
+  Eye, EyeOff, Fingerprint, LayoutDashboard, LockKeyhole, Menu,
+  MessageCircle, PanelLeftClose, Plus, RefreshCw, Search, ShieldCheck,
+  Sparkles, Star, Trash2, Wallet, X,
   type LucideIcon,
 } from 'lucide-react'
 import './App.css'
 
-type Section = 'overview' | 'markets' | 'trade' | 'alpha' | 'exchange' | 'wallet' | 'payments' | 'ask'
+type Section = 'overview' | 'markets' | 'trade' | 'alpha' | 'exchange' | 'wallet' | 'bots' | 'payments' | 'ask'
 type Market = { id: string; symbol: string; name: string; image: string; price: number; change: number; volume: number; sparkline?: number[] }
 type NetworkStatus = { network: string; label?: string; status: string; latency_ms?: number; provider?: string; cluster?: string; block_number?: string }
 type Service = { id?: string; name?: string; title?: string; description?: string; summary?: string; category?: string; price?: number | string; currency?: string; pricing?: unknown }
@@ -23,6 +24,7 @@ const navItems: { id: Section; label: string; icon: LucideIcon; group?: string }
   { id: 'trade', label: 'Trade', icon: ArrowLeftRight },
   { id: 'alpha', label: 'Alpha', icon: Sparkles, group: 'Discover' },
   { id: 'exchange', label: 'Agent exchange', icon: Compass },
+  { id: 'bots', label: 'Bots', icon: Bot, group: 'Automate' },
   { id: 'wallet', label: 'Wallets', icon: Wallet, group: 'Manage' },
   { id: 'payments', label: 'PrivatePAY', icon: LockKeyhole },
   { id: 'ask', label: 'Ask PDAO', icon: MessageCircle },
@@ -33,6 +35,7 @@ const sectionMeta: Record<Section, { eyebrow: string; title: string; subtitle: s
   trade: { eyebrow: 'EXECUTION DESK', title: 'Trade with intention.', subtitle: 'Review live quotes before you approve a transaction.' },
   alpha: { eyebrow: 'DISCOVERY', title: 'Find the signal.', subtitle: 'Explore momentum, liquidity and emerging on-chain activity.' },
   exchange: { eyebrow: 'PDAO AGENT EXCHANGE', title: 'Intelligence at your service.', subtitle: 'Discover live capabilities and their published prices.' },
+  bots: { eyebrow: 'TRADING WORKSPACE', title: 'Your strategy, clearly set.', subtitle: 'Shape a policy, protect your secrets locally, and choose where to trade.' },
   wallet: { eyebrow: 'SELF CUSTODY', title: 'Your keys. Your world.', subtitle: 'Manage the wallets you control, with care.' },
   payments: { eyebrow: 'PRIVATEPAY', title: 'Payments, thoughtfully private.', subtitle: 'Prepare a payment from an exact provider quote.' },
   ask: { eyebrow: 'PDAO INTELLIGENCE', title: 'What would you like to know?', subtitle: 'Ask about markets, your wallet or the PDAO ecosystem.' },
@@ -151,6 +154,7 @@ function App() {
         {section === 'alpha' && <Alpha prices={prices} state={priceState} onNavigate={changeSection} />}
         {section === 'exchange' && <Exchange services={filteredServices} state={serviceState} query={query} setQuery={setQuery} category={category} setCategory={setCategory} refresh={refreshServices} />}
         {section === 'wallet' && <Wallets onToast={setToast} />}
+        {section === 'bots' && <BotsWorkspace prices={prices} services={services} onToast={setToast} onNavigate={changeSection} />}
         {section === 'payments' && <Payments amount={amount} setAmount={setAmount} onToast={setToast} />}
         {section === 'ask' && <Ask onToast={setToast} />}
         <footer className="page-footer"><span>PrivateDAO Wallet <span className="footer-dot">·</span> Private by design <span className="footer-dot">·</span> <a href="/terms.html">Terms</a> <span className="footer-dot">·</span> <a href="/privacy.html">Privacy</a></span><span>Prices from CoinGecko <span className="footer-dot">·</span> {priceState === 'live' ? 'Updated just now' : 'Market feed status shown above'}</span></footer>
@@ -281,6 +285,116 @@ function Wallets({ onToast }: { onToast: (s: string) => void }) {
     {flow && <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closeFlow() }}><section className="wallet-modal card-surface" role="dialog" aria-modal="true" aria-labelledby="wallet-modal-title"><div className="modal-heading"><div><span className="small-label">LOCAL WALLET VAULT</span><h2 id="wallet-modal-title">{flow === 'create' ? 'Create your wallet' : flow === 'import' ? 'Restore your wallet' : 'Unlock your wallet'}</h2></div><button className="icon-button" aria-label="Close" onClick={closeFlow}><X size={18} /></button></div>{flow === 'create' && <><p className="modal-copy">Write these words down and keep them offline. This is the only recovery key to your wallet.</p><div className="phrase-grid">{phrase.split(' ').map((word, index) => <div key={`${word}-${index}`}><small>{String(index + 1).padStart(2, '0')}</small><b>{word}</b></div>)}</div><button className="phrase-copy" onClick={() => void navigator.clipboard.writeText(phrase).then(() => onToast('Recovery phrase copied. Clear your clipboard after saving it offline.')).catch(() => setError('Clipboard access failed. Write the words down manually.'))}>Copy recovery phrase <ArrowUpRight size={14} /></button><label className="backup-confirm"><input type="checkbox" checked={backupConfirmed} onChange={event => setBackupConfirmed(event.target.checked)} /><span>I’ve written the recovery phrase down and stored it offline.</span></label></>}{flow === 'import' && <><label className="modal-field">Recovery phrase<textarea value={phrase} onChange={event => setPhrase(event.target.value)} placeholder="Enter your 12 or 24 recovery words" rows={3} autoComplete="off" spellCheck={false} /></label><p className={`phrase-validity ${phrase.trim() ? checkRecoveryPhrase(phrase) ? 'valid' : 'invalid' : ''}`}>{phrase.trim() ? checkRecoveryPhrase(phrase) ? 'Recovery phrase verified' : 'Check the words and their order' : 'Phrase is processed on this device only'}</p></>}{flow !== 'unlock' && <><label className="modal-field">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} minLength={12} autoComplete="new-password" placeholder="At least 12 characters" /></label><p className="passphrase-hint">This passphrase encrypts the wallet on this device. It cannot recover a lost recovery phrase.</p></>}{flow === 'unlock' && <label className="modal-field">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} autoComplete="current-password" placeholder="Your wallet passphrase" onKeyDown={event => { if (event.key === 'Enter') void unlock() }} /></label>}{error && <div className="form-error" role="alert">{error}</div>}<div className="modal-actions"><button className="button-secondary" onClick={closeFlow}>Cancel</button>{flow === 'unlock' ? <button className="button-primary" onClick={() => void unlock()} disabled={!passphrase || busy}>{busy ? 'Unlocking…' : 'Unlock wallet'}</button> : <button className="button-primary" onClick={() => void submitWallet()} disabled={busy || passphrase.length < 12 || (flow === 'create' && !backupConfirmed) || (flow === 'import' && !checkRecoveryPhrase(phrase))}>{busy ? 'Encrypting…' : flow === 'create' ? 'Encrypt & save wallet' : 'Restore & encrypt'}</button>}</div></section></div>}
   </div>
 }
+
+type BotTab = 'Policy' | 'Vault' | 'Team Bots' | 'DApp Browser'
+type BotPolicy = { name: string; network: string; strategy: string; tokens: string; maxOrder: string; dailyBudget: string; slippage: string; stopLoss: string; takeProfit: string }
+type TeamBot = { id: string; name: string; role: string; strategy: string; scope: string; enabled: boolean }
+type BotApp = { name: string; detail: string; url: string; mark: string; color: string }
+
+const botPolicyKey = 'pdao-bot-policy-v1'
+const teamBotsKey = 'pdao-team-bots-v1'
+const defaultBotPolicy: BotPolicy = { name: 'My PDAO Bot', network: 'Solana Mainnet', strategy: 'Momentum', tokens: 'SOL, USDC', maxOrder: '25', dailyBudget: '100', slippage: '50', stopLoss: '8', takeProfit: '15' }
+const defaultTeamBots: TeamBot[] = [
+  { id: 'scout', name: 'Market Scout', role: 'Research', strategy: 'Momentum watch', scope: 'Public market signals', enabled: true },
+  { id: 'risk', name: 'Risk Analyst', role: 'Risk review', strategy: 'Liquidity & holder review', scope: 'Read-only evidence', enabled: true },
+]
+const tradingApps: BotApp[] = [
+  { name: 'Pump.fun', detail: 'Token launches · Solana', url: 'https://pump.fun/', mark: 'P', color: 'coral' },
+  { name: 'Moonshot', detail: 'Discover & trade · Solana', url: 'https://moonshot.com/', mark: 'M', color: 'violet' },
+  { name: 'GMGN', detail: 'Token discovery · Solana', url: 'https://gmgn.ai/', mark: 'G', color: 'mint' },
+  { name: 'Axiom', detail: 'Trading terminal · multichain', url: 'https://axiom.trade/', mark: 'A', color: 'blue' },
+  { name: 'BullX', detail: 'Trading terminal · Solana', url: 'https://bullx.io/', mark: 'B', color: 'gold' },
+  { name: 'Photon', detail: 'Token discovery · Solana', url: 'https://photon-sol.tinyastro.io/', mark: 'Φ', color: 'cyan' },
+]
+
+function readLocal<T>(key: string, fallback: T): T {
+  try {
+    const value = localStorage.getItem(key)
+    return value ? { ...fallback as object, ...JSON.parse(value) as object } as T : fallback
+  } catch { return fallback }
+}
+
+function BotsWorkspace({ prices, services, onToast, onNavigate }: { prices: Market[]; services: Service[]; onToast: (message: string) => void; onNavigate: (section: Section) => void }) {
+  const [tab, setTab] = useState<BotTab>('Policy')
+  const [policy, setPolicy] = useState<BotPolicy>(() => readLocal(botPolicyKey, defaultBotPolicy))
+  const [team, setTeam] = useState<TeamBot[]>(() => {
+    try { const saved = localStorage.getItem(teamBotsKey); return saved ? JSON.parse(saved) as TeamBot[] : defaultTeamBots }
+    catch { return defaultTeamBots }
+  })
+  const [secrets, setSecrets] = useState<import('./lib/walletVault').BotSecretRecord[]>([])
+  const [secretLabel, setSecretLabel] = useState('')
+  const [secretValue, setSecretValue] = useState('')
+  const [vaultPassphrase, setVaultPassphrase] = useState('')
+  const [unlockPassphrase, setUnlockPassphrase] = useState('')
+  const [revealed, setRevealed] = useState<{ id: string; value: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [autopilot, setAutopilot] = useState<{ state: 'loading' | 'ready' | 'unavailable'; enabled?: boolean; operational?: boolean; blockers?: number }>({ state: 'loading' })
+
+  const refreshVault = async () => {
+    try { const { listBotSecrets } = await import('./lib/walletVault'); setSecrets(await listBotSecrets()) }
+    catch { setError('Encrypted local storage is unavailable in this browser.') }
+  }
+  const refreshAutopilot = async () => {
+    setAutopilot({ state: 'loading' })
+    try {
+      const response = await fetch('https://agents.privatedao.org/api/privatepay/autopilot/status', { headers: { accept: 'application/json' } })
+      if (!response.ok) throw new Error('Autopilot status request failed.')
+      const data = await response.json() as Record<string, unknown>
+      const blockers = Array.isArray(data.activation_blockers) ? data.activation_blockers.length : undefined
+      setAutopilot({ state: 'ready', enabled: data.enabled === true, operational: data.operational === true, blockers })
+    } catch { setAutopilot({ state: 'unavailable' }) }
+  }
+  useEffect(() => { void refreshVault(); void refreshAutopilot() }, [])
+
+  const updatePolicy = (key: keyof BotPolicy, value: string) => setPolicy(current => ({ ...current, [key]: value }))
+  const savePolicy = () => {
+    try { localStorage.setItem(botPolicyKey, JSON.stringify(policy)); onToast('Strategy policy saved on this device.') }
+    catch { setError('Could not save the policy in this browser.') }
+  }
+  const saveTeam = (next: TeamBot[]) => {
+    setTeam(next)
+    try { localStorage.setItem(teamBotsKey, JSON.stringify(next)) }
+    catch { setError('Could not save team bots in this browser.') }
+  }
+  const addSecret = async () => {
+    setBusy(true); setError('')
+    try {
+      const { saveBotSecret } = await import('./lib/walletVault')
+      await saveBotSecret(secretLabel, secretValue, vaultPassphrase)
+      setSecretLabel(''); setSecretValue(''); setVaultPassphrase(''); setRevealed(null)
+      await refreshVault(); onToast('Secret encrypted and saved locally.')
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not encrypt this secret.') }
+    finally { setBusy(false) }
+  }
+  const revealSecret = async (record: import('./lib/walletVault').BotSecretRecord) => {
+    setError('')
+    try {
+      const { unlockBotSecret } = await import('./lib/walletVault')
+      const value = await unlockBotSecret(record, unlockPassphrase)
+      setRevealed({ id: record.id, value }); setUnlockPassphrase('')
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not unlock this secret.') }
+  }
+  const relatedServices = services.filter(service => /wallet|risk|classif|research|market/i.test(`${service.id ?? ''} ${service.name ?? ''} ${service.title ?? ''}`)).slice(0, 4)
+
+  return <section className="bots-workspace">
+    <div className="bots-intro card-surface"><div className="bots-intro-icon"><Bot size={23} /></div><div><span className="small-label">PDAO TRADING DESK</span><h2>Fast ideas. Your call on every trade.</h2><p>Policies and team notes stay on this device. This workspace never receives your primary wallet key.</p></div><div className="bots-live-state"><i /> MAINNET</div></div>
+    <div className="bots-tabs" role="tablist" aria-label="Bot workspace">{(['Policy', 'Vault', 'Team Bots', 'DApp Browser'] as BotTab[]).map(item => <button role="tab" aria-selected={tab === item} className={tab === item ? 'active' : ''} key={item} onClick={() => { setTab(item); setError('') }}>{item}</button>)}</div>
+    {tab === 'Policy' && <div className="bot-policy-layout">
+      <section className="bot-panel card-surface"><div className="bot-panel-heading"><div><span className="small-label">STRATEGY & SPENDING POLICY</span><h3>Set your bot’s playbook.</h3></div><span className="manual-badge"><ShieldCheck size={13} /> Manual approval</span></div>
+        <div className="bot-form-grid"><label>Bot name<input value={policy.name} onChange={event => updatePolicy('name', event.target.value)} /></label><label>Network<select value={policy.network} onChange={event => updatePolicy('network', event.target.value)}><option>Solana Mainnet</option><option>Base</option><option>Ethereum</option></select></label><label>Strategy<select value={policy.strategy} onChange={event => updatePolicy('strategy', event.target.value)}>{['Momentum', 'DCA', 'Launch scout', 'Copy-trade research', 'Custom'].map(option => <option key={option}>{option}</option>)}</select></label><label>Tokens to watch<input value={policy.tokens} onChange={event => updatePolicy('tokens', event.target.value)} placeholder="SOL, USDC" /></label><label>Maximum order (USD)<input inputMode="decimal" value={policy.maxOrder} onChange={event => updatePolicy('maxOrder', event.target.value)} /></label><label>Daily strategy budget (USD)<input inputMode="decimal" value={policy.dailyBudget} onChange={event => updatePolicy('dailyBudget', event.target.value)} /></label><label>Slippage (basis points)<input inputMode="numeric" value={policy.slippage} onChange={event => updatePolicy('slippage', event.target.value)} /></label><label>Stop-loss (%)<input inputMode="decimal" value={policy.stopLoss} onChange={event => updatePolicy('stopLoss', event.target.value)} /></label><label>Take-profit (%)<input inputMode="decimal" value={policy.takeProfit} onChange={event => updatePolicy('takeProfit', event.target.value)} /></label></div>
+        <div className="bot-policy-actions"><span><LockKeyhole size={14} /> Saved locally · trades require your wallet approval</span><button className="button-primary" onClick={savePolicy}><ShieldCheck size={15} /> Save policy</button></div>
+        <div className="bot-suggestion"><Sparkles size={16} /><div><b>Live market context</b><p>{prices.length ? `${prices.slice(0, 3).map(asset => `${asset.symbol} ${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`).join(' · ')} · Review current signals before acting.` : 'Market signals will appear when the live feed is available.'}</p></div></div>
+      </section>
+      <aside className="bot-side-stack"><section className="bot-panel card-surface autopilot-panel"><div className="bot-panel-heading"><div><span className="small-label">PRIVATEPAY AUTOPILOT</span><h3>Delegated payment status</h3></div><button className="refresh-inline" onClick={() => void refreshAutopilot()}><RefreshCw size={13} /> Refresh</button></div><div className="autopilot-status"><span className={`network-health-dot ${autopilot.state === 'ready' && autopilot.operational ? 'healthy' : ''}`} /><div><b>{autopilot.state === 'loading' ? 'Checking live status…' : autopilot.state === 'unavailable' ? 'Status unavailable' : autopilot.operational ? 'Operational' : 'Awaiting activation'}</b><small>{autopilot.state === 'ready' ? `${autopilot.enabled ? 'Enabled' : 'Not enabled'}${autopilot.blockers === undefined ? '' : ` · ${autopilot.blockers} activation blockers`}` : 'Read-only Agent Exchange status'}</small></div></div><p>PrivatePAY Autopilot uses delegated agent sessions and explicit service, network, asset and recipient allowlists. It does not expose reusable payment credentials.</p><button className="button-secondary" onClick={() => onNavigate('payments')}>Open PrivatePAY <ArrowRight size={14} /></button></section>
+        <section className="bot-panel card-surface"><div className="bot-panel-heading"><div><span className="small-label">AGENT EXCHANGE</span><h3>Research capabilities</h3></div><span className="exchange-live-chip"><i /> {services.length ? `${services.length} LIVE` : 'CONNECTING'}</span></div>{relatedServices.length ? <div className="bot-service-list">{relatedServices.map((service, index) => <div key={service.id ?? index}><span><Bot size={15} /></span><div><b>{service.title ?? service.name ?? service.id}</b><small>{service.id ?? 'Agent service'}</small></div><button aria-label="Explore this service" onClick={() => onNavigate('exchange')}><ArrowUpRight size={15} /></button></div>)}</div> : <p>Live wallet research and risk services will appear here from the Agent Exchange catalog.</p>}<button className="text-action" onClick={() => onNavigate('exchange')}>View live services <ArrowRight size={14} /></button></section></aside>
+    </div>}
+    {tab === 'Vault' && <section className="bot-panel card-surface bot-vault-panel"><div className="bot-panel-heading"><div><span className="small-label">ENCRYPTED BOT VAULT</span><h3>Secrets remain on this device.</h3></div><span className="vault-seal"><LockKeyhole size={17} /> AES-GCM</span></div><p className="bot-vault-copy">Values are encrypted locally with a passphrase before they are stored in IndexedDB. Only labels and encrypted values persist; plaintext is held in memory only while you enter or reveal it.</p><div className="vault-add-grid"><label>Secret label<input value={secretLabel} onChange={event => setSecretLabel(event.target.value)} placeholder="COPY_SOURCE, API token…" /></label><label>Secret value<input type="password" autoComplete="off" value={secretValue} onChange={event => setSecretValue(event.target.value)} placeholder="Enter a secret" /></label><label>Vault passphrase<input type="password" autoComplete="new-password" value={vaultPassphrase} onChange={event => setVaultPassphrase(event.target.value)} placeholder="At least 12 characters" /></label><button className="button-primary" onClick={() => void addSecret()} disabled={busy || !secretLabel.trim() || !secretValue.trim() || vaultPassphrase.length < 12}>{busy ? 'Encrypting…' : <><Plus size={15} /> Encrypt & save</>}</button></div><div className="vault-unlock-row"><label>Passphrase to reveal a stored value<input type="password" autoComplete="current-password" value={unlockPassphrase} onChange={event => setUnlockPassphrase(event.target.value)} placeholder="Entered only when you choose Reveal" /></label><span>{secrets.length} encrypted {secrets.length === 1 ? 'item' : 'items'}</span></div>{error && <div className="form-error" role="alert">{error}</div>}<div className="secret-list">{secrets.length ? secrets.map(record => <article key={record.id}><span className="secret-lock"><LockKeyhole size={15} /></span><div><b>{record.label}</b><small>Encrypted on this device · {new Date(record.createdAt).toLocaleDateString()}</small>{revealed?.id === record.id && <code>{revealed.value}</code>}</div><button className="icon-button" aria-label={revealed?.id === record.id ? 'Hide secret' : 'Reveal secret'} onClick={() => revealed?.id === record.id ? setRevealed(null) : void revealSecret(record)}>{revealed?.id === record.id ? <EyeOff size={16} /> : <Eye size={16} />}</button><button className="icon-button danger-icon" aria-label="Delete secret" onClick={() => { void import('./lib/walletVault').then(({ removeBotSecret }) => removeBotSecret(record.id)).then(() => { setSecrets(items => items.filter(item => item.id !== record.id)); if (revealed?.id === record.id) setRevealed(null) }).catch(() => setError('Could not delete this encrypted secret.')) }}><Trash2 size={15} /></button></article>) : <div className="vault-empty"><LockKeyhole size={20} /><span>No bot secrets saved yet.</span></div>}</div><div className="primary-key-note"><ShieldCheck size={16} /><span>Your primary wallet recovery phrase is kept in the Wallet vault and is never shared with bots or Agent Exchange.</span></div></section>}
+    {tab === 'Team Bots' && <section className="bot-panel card-surface team-panel"><div className="bot-panel-heading"><div><span className="small-label">TEAM BOT ROSTER</span><h3>One lead. Focused specialists.</h3></div><button className="button-secondary" onClick={() => saveTeam([...team, { id: crypto.randomUUID(), name: `Research Bot ${team.length + 1}`, role: 'Research', strategy: 'Market research', scope: 'Read-only signals', enabled: false }])}><Plus size={15} /> Add team bot</button></div><label className="lead-bot-field">Lead bot name<input value={policy.name} onChange={event => updatePolicy('name', event.target.value)} onBlur={savePolicy} /></label><div className="team-bot-grid">{team.map(bot => <article className="team-bot-card" key={bot.id}><div className="team-bot-top"><span className="team-bot-icon"><Bot size={18} /></span><button className={`bot-toggle ${bot.enabled ? 'on' : ''}`} aria-label={`${bot.enabled ? 'Pause' : 'Enable'} ${bot.name}`} aria-pressed={bot.enabled} onClick={() => saveTeam(team.map(item => item.id === bot.id ? { ...item, enabled: !item.enabled } : item))}><i /></button></div><label>Bot name<input value={bot.name} onChange={event => saveTeam(team.map(item => item.id === bot.id ? { ...item, name: event.target.value } : item))} /></label><div className="team-bot-fields"><label>Role<input value={bot.role} onChange={event => saveTeam(team.map(item => item.id === bot.id ? { ...item, role: event.target.value } : item))} /></label><label>Strategy<input value={bot.strategy} onChange={event => saveTeam(team.map(item => item.id === bot.id ? { ...item, strategy: event.target.value } : item))} /></label><label>Scope<input value={bot.scope} onChange={event => saveTeam(team.map(item => item.id === bot.id ? { ...item, scope: event.target.value } : item))} /></label></div><footer><span><i className={bot.enabled ? 'enabled-dot' : ''} />{bot.enabled ? 'Policy enabled locally' : 'Paused locally'}</span><button onClick={() => saveTeam(team.filter(item => item.id !== bot.id))}><Trash2 size={14} /> Remove</button></footer></article>)}<button className="team-add-card" onClick={() => saveTeam([...team, { id: crypto.randomUUID(), name: `Research Bot ${team.length + 1}`, role: 'Research', strategy: 'Market research', scope: 'Read-only signals', enabled: false }])}><Plus size={20} /><b>Add a specialist</b><span>Configure its role and scope</span></button></div><div className="primary-key-note"><ShieldCheck size={16} /><span>Team profiles are saved locally. Enabling a profile does not launch an autonomous trade or transmit wallet keys.</span></div></section>}
+    {tab === 'DApp Browser' && <section className="bot-panel card-surface dapp-panel"><div className="bot-panel-heading"><div><span className="small-label">SOLANA TRADING DESTINATIONS</span><h3>Choose your trading venue.</h3><p>Open an external app in a new tab. Connect your wallet there only if you decide to.</p></div><span className="dapp-globe"><ExternalLink size={19} /></span></div><div className="dapp-grid">{tradingApps.map(app => <a className="dapp-card" href={app.url} target="_blank" rel="noopener noreferrer" key={app.name}><span className={`dapp-mark ${app.color}`}>{app.mark}</span><span className="dapp-card-copy"><b>{app.name}</b><small>{app.detail}</small></span><ExternalLink size={15} /></a>)}</div><div className="dapp-footnote"><ShieldCheck size={15} /><span>External destinations open outside this wallet. PrivateDAO does not send your recovery phrase or submit trades to these sites.</span></div></section>}
+  </section>
+}
+
 function Payments({ amount, setAmount, onToast }: { amount: string; setAmount: (s: string) => void; onToast: (s: string) => void }) {
   const [resource, setResource] = useState('https://agents.privatedao.org/services/privatepay-x402')
   const [provider, setProvider] = useState('privatedao-agent-exchange')
