@@ -8,6 +8,22 @@
 
 ## Current rollout state
 
+The current Auth0 client belongs to the `dev-xojmajo443e15z7n` development
+tenant. `public/pdao-config.js` marks it as `environment: 'development'`.
+On `wallet.privatedao.org`, the app refuses to start Auth0 or Dock redirects
+while that marker is not `production`; wallet connection and the rest of the
+app remain available. The development tenant is still usable on preview and
+local origins. Do not flip the marker to bypass this guard.
+
+Before production sign-in is enabled, provision and verify the production
+Auth0 tenant and its separate web and native clients. Set the production
+domain/client IDs, callback and logout URLs, Android deep link, and mark the
+runtime config `environment: 'production'`. Run Auth0 Production Readiness
+Checks before publishing that configuration. The web callback must include
+`https://wallet.privatedao.org/auth/callback`; the native callback must match
+the Android package and Auth0 native-client settings. Never put a client
+secret in this public runtime file.
+
 The connected Descope project is named `PrivateDAO`. It currently has SSO, flows, roles, permissions, and access keys; tenant setup is listed as a gap. The project has no API Resources or agentic clients yet, and its FGA schema is empty. Runtime `descope.enabled` remains `false` in `public/pdao-config.js`.
 
 A PDAO-owned HTTP API is deployed in AWS `us-east-1` at `https://nnnx1tvyqb.execute-api.us-east-1.amazonaws.com`. API Gateway has a native Descope JWT authorizer configured with issuer `https://api.descope.com/P3LeEm9CWaHUiGrt0hNS1Xglk2Mt`, the API URL as the exact audience, and a protected `GET /v1/agent/identity` route requiring `agent.identity.read`. Live evidence: `GET /health` returns 200; the protected identity route returns 401 without a bearer token. The Descope Resource, client grants, and valid scoped-token acceptance check are pending, so the API does not yet accept an agent token; the UI reports **Descope Resource binding pending**.

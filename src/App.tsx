@@ -76,7 +76,9 @@ function Sparkline({ data, positive = true, large = false }: { data?: number[]; 
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, isLoading: authLoading } = useAuth0()
   const nativeAuth = Capacitor.isNativePlatform()
-  const authEnabled = window.PDAO_CONFIG.auth0.enabled && import.meta.env.BASE_URL !== './'
+  const authConfig = window.PDAO_CONFIG.auth0
+  const productionAuthMismatch = !nativeAuth && window.location.hostname === authConfig.productionHostname && authConfig.environment !== 'production'
+  const authEnabled = authConfig.enabled && import.meta.env.BASE_URL !== './' && !productionAuthMismatch
   const nativeRedirectUri = window.PDAO_CONFIG.auth0.nativeRedirectUri
   const [section, setSection] = useState<Section>(() => (window.location.hash.replace('#', '') as Section) || 'overview')
   const [welcome, setWelcome] = useState(!sessionStorage.getItem('pdao-entered'))
@@ -325,6 +327,7 @@ function App() {
         <div className="topbar-actions"><button className="network-pill"><i /> MAINNET</button><button className="account-button" onClick={() => {
           if (isAuthenticated) void logout({ logoutParams: { returnTo: nativeAuth ? nativeRedirectUri : `${window.location.origin}${import.meta.env.BASE_URL}` }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })
           else if (authEnabled) void loginWithRedirect({ appState: { returnTo: window.location.pathname + window.location.hash }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })
+          else if (productionAuthMismatch) setToast('Secure sign-in is being prepared for this domain. You can still connect a wallet directly.')
           else { changeSection('wallet'); setToast('Connect any available wallet directly. An account sign-in is not required.') }
         }}><span className="account-dot">{isAuthenticated ? (user?.name?.slice(0, 1) ?? 'P') : 'P'}</span><span>{authLoading ? 'Loading…' : isAuthenticated ? (user?.name ?? 'Account') : 'Sign in'}</span><ChevronDown size={14} /></button></div>
       </header>
@@ -339,7 +342,10 @@ function App() {
         {section === 'wallet' && <Wallets onToast={setToast} standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={connectStandard} onConnectEvm={connectEvm} onDisconnectExternal={disconnectExternal} onRescanWallets={rescanWalletProviders} />}
         {section === 'bots' && <BotsWorkspace prices={prices} services={services} onToast={setToast} onNavigate={changeSection} />}
         {section === 'payments' && <Payments amount={amount} setAmount={setAmount} onToast={setToast} onNavigate={setSection} connectedWallets={connectedWallets} />}
-        {section === 'identity' && <Identity authenticated={isAuthenticated} onDockLogin={() => authEnabled && void loginWithRedirect({ authorizationParams: window.PDAO_CONFIG.auth0.dockConnection ? { connection: window.PDAO_CONFIG.auth0.dockConnection } : undefined, appState: { returnTo: window.location.pathname + window.location.hash }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })} />}
+        {section === 'identity' && <Identity authenticated={isAuthenticated} onDockLogin={() => {
+          if (productionAuthMismatch) { setToast('Dock sign-in is unavailable until production identity is configured.'); return }
+          if (authEnabled) void loginWithRedirect({ authorizationParams: authConfig.dockConnection ? { connection: authConfig.dockConnection } : undefined, appState: { returnTo: window.location.pathname + window.location.hash }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })
+        }} />}
         {section === 'ask' && <Ask services={services} />}
         <footer className="page-footer"><span>PrivateDAO Wallet <span className="footer-dot">·</span> Private by design <span className="footer-dot">·</span> <a href={`${import.meta.env.BASE_URL}terms.html`}>Terms</a> <span className="footer-dot">·</span> <a href={`${import.meta.env.BASE_URL}privacy.html`}>Privacy</a>{authEnabled && <span className="auth0-attribution"><img src={`${import.meta.env.BASE_URL}assets/auth0-logo.png`} alt="" /> Powered by Auth0</span>}</span><span>Prices from CoinGecko <span className="footer-dot">·</span> {priceState === 'live' ? 'Updated just now' : 'Market feed status shown above'}</span></footer>
       </div>

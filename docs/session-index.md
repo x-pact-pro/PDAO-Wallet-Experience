@@ -56,6 +56,12 @@ older `PDAO Wallet` Auth0 client was not modified.
 
 - Auth0 handles people. Browser token storage stays in memory; private keys and
   recovery phrases never go to Auth0 or an API.
+- The current Auth0 tenant shown in the supplied dashboard screenshot is a
+  development tenant. The app's public config explicitly marks that
+  environment, and the official `wallet.privatedao.org` host now blocks human
+  and Dock Auth0 redirects until production Auth0 configuration is supplied.
+  The wallet itself remains usable. Do not label the existing development
+  tenant production or enable this gate by changing only the environment flag.
 - Descope handles machine-agent identity and authorization. The UI carries the
   Descope wordmark and distinguishes project connection, gateway deployment,
   and actually authorized access.
