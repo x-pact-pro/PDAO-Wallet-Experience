@@ -104,6 +104,11 @@ older `PDAO Wallet` Auth0 client was not modified.
   It is unsigned and not directly installable. A clean build succeeded, but
   the APK hash differs from the local-tree output; no bit-for-bit
   reproducibility claim is made.
+- Chrome MV3 preview `v0.1.0-preview.1` is published from
+  `x-pact-pro/PDAO-Wallet-Experience`. GitHub confirms the uploaded ZIP's SHA-256
+  matches the local package. The unpacked extension loaded in isolated Chrome
+  153 and passed a 390px no-overflow review; Chrome Web Store publication and
+  an installed-wallet signing interaction remain open.
 - The source includes `.fdroid.yml`, an English store-listing draft, and the
   launcher icon. No submission was made; F-Droid tooling/review, Android
   screenshots, and device verification remain open.

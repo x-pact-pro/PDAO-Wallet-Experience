@@ -42,6 +42,7 @@
 
 ## Phase 6 — Distribution
 - [x] Chrome MV3 build, root-level ZIP, isolated Chrome 153 load, workspace navigation, live prices, and 390px no-overflow check.
+- [x] Publish Chrome package as GitHub preview release `v0.1.0-preview.1` with a verified asset digest.
 - [ ] Chrome Web Store publishing and interaction with an installed wallet provider.
 - [x] Capacitor Android app shell, Android MWA registration, SDK debug build, and APK checksum.
 - [x] F-Droid metadata draft and source-vendored Gradle recipe; Android release build succeeded from a clean clone.

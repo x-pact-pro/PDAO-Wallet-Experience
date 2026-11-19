@@ -16,10 +16,11 @@ F-Droid.
 | Artifact | SHA-256 | State |
 |---|---|---|
 | `PDAO-Wallet-Android-release-unsigned-0.1.0-20261119-r22.apk` | `fb4474c6acc0286e34da4261b35eb941b63b0124dd2962400640d943a498195a` | Clean-clone offline release build; unsigned; not directly installable |
-| `PDAO-Wallet-Chrome-0.1.0-20261119-r22.zip` | `85988f373b6ab61a3fc9d9c4d99660c902ccf9c3d52f5d76913ed07f045799a7` | MV3 package at archive root; ZIP integrity and isolated Chrome load verified |
+| `PDAO-Wallet-Chrome-0.1.0-20261119-r22.zip` | `85988f373b6ab61a3fc9d9c4d99660c902ccf9c3d52f5d76913ed07f045799a7` | GitHub prerelease `v0.1.0-preview.1`; ZIP integrity and isolated Chrome load verified |
 
 The Chrome package is at
 `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/PDAO-Wallet-Chrome-0.1.0-20261119-r22.zip`.
+It is published at [GitHub release v0.1.0-preview.1](https://github.com/x-pact-pro/PDAO-Wallet-Experience/releases/tag/v0.1.0-preview.1); GitHub reports the uploaded asset digest matches the local SHA-256.
 The archive contains `manifest.json`, `index.html`, and `service-worker.js` at
 its root. `npm run build:extension` succeeded; its expected notice says the
 classic `pdao-config.js` cannot be bundled as a module. Chrome 153 loaded the

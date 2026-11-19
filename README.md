@@ -38,7 +38,7 @@ cd android
 
 ## Distribution
 
-The web app is hosted in AWS Amplify `us-east-1` at https://main.d2iwf2bo6lci0r.amplifyapp.com/. GitHub Pages remains a secondary preview. See `fastlane/metadata/android/en-US` for the F-Droid listing draft and `.fdroid.yml` for the source-build recipe. A clean-clone offline Android release build succeeds; its APK is unsigned and not directly installable. No F-Droid submission has been made. The current Chrome MV3 package is available from the release handoff in `docs/release-handoff.md`; browser installation review remains open.
+The web app is hosted in AWS Amplify `us-east-1` at https://main.d2iwf2bo6lci0r.amplifyapp.com/. GitHub Pages remains a secondary preview. See `fastlane/metadata/android/en-US` for the F-Droid listing draft and `.fdroid.yml` for the source-build recipe. A clean-clone offline Android release build succeeds; its APK is unsigned and not directly installable. No F-Droid submission has been made. The Chrome MV3 preview package is available at https://github.com/x-pact-pro/PDAO-Wallet-Experience/releases/tag/v0.1.0-preview.1; Chrome Web Store publishing and wallet-provider interaction review remain open.
 
 ## License
 
