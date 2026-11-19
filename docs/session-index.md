@@ -72,23 +72,23 @@ GitHub Pages is a secondary preview. Vercel is not the production target.
 - Pump.fun, Moonshot, and other meme-venue connections are not live trading
   integrations yet. A DApp link is not an agent execution result.
 
-## Current handoff (r12 deployed)
+## Current handoff (r13 build candidate; r12 deployed)
 
-- Most recent pushed commit before current agent-gateway work:
-  `09b618f` (mobile market table and desktop navigation).
-- Current local changes include the gateway CloudFormation template, truthful
-  Descope status branding, runtime API origin, and identity documentation.
-  Web, Chrome, and Android r12 builds succeeded. Source is pushed at
-  `94d0441`; Amplify deployment job `6` succeeded and live page/config returned
-  HTTP 200.
-- Current r12 artifacts are under
+- Most recent published release is r12, deployed to Amplify by job `6`; the
+  public page and runtime config returned HTTP 200.
+- The current r13 design pass replaces the alpha hero’s decorative curve with
+  the live 7-day series and a labeled 24-hour move, fixes the clipped chart on
+  phone, expands the overview watchlist across the content width, and improves
+  mobile reading sizes. Web, Chrome, and Android builds succeeded on Node
+  26.13.1; source push and r13 Amplify release are pending.
+- Current r13 artifacts are under
   `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/`:
-  - Web ZIP SHA-256: `6f60085551dd2aa407752bc10b488c82cb529731f8b8534ee5f71f060d5e73ad`
-  - Chrome ZIP SHA-256: `f081afc722e38c890065fe7e4e4011e60261c722068e1358ade9048dcfe91463`
-  - Android debug APK SHA-256: `efb921a37f895b685ce65c4185e7828874a801a6f879f5b9146bc2ecd0334cb9`
+  - Web ZIP SHA-256: `143f1217a24c94dee641fc8bf65ce752c96fbfa445227316de8085d67a843845`
+  - Chrome ZIP SHA-256: `2731df07d0d1eefdeac0770f3c441b0bd764d44b4dd30076116c5283b2700621`
+  - Android debug APK SHA-256: `87382097b455679a98364b6fdfda1665a69f0fe59266bcb019ae8d6c293362d9`
 - Android uses `targetSdkVersion = 35`, `compileSdkVersion = 36`, and the new
   repo's Gradle project. It is a debug APK, not a release/F-Droid build.
-- The currently published UI is r12. Descope gateway deployment is live;
+- The currently published UI remains r12 until the r13 Amplify release. Descope gateway deployment is live;
   Descope Resource/client grants and scoped-token verification remain pending.
 
 ## Remaining work, in priority order

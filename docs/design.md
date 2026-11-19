@@ -31,3 +31,12 @@ One gentle welcome reveal. Card tilt responds to pointer only on capable devices
 ## Language
 
 Sentence case, specific outcomes, no fabricated market narratives, no urgency copy, no claims that a transaction settled before chain confirmation.
+
+## Live alpha integrity
+
+The Alpha hero chart is rendered from CoinGecko's current 7-day price series for
+the largest absolute 24-hour mover. It labels the asset, current USD quote,
+24-hour change, source, and chart period. If the feed is unavailable, the chart
+is replaced with an explicit unavailable state; no illustrative price curve is
+shown as live market data. On phones, the chart remains in document flow rather
+than being clipped by the hero panel.

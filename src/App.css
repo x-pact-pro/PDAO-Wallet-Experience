@@ -96,6 +96,39 @@
 .sidebar-brand .sidebar-close{display:none}
 @media(max-width:850px){.sidebar-brand .sidebar-close{display:grid}}
 
+/* The alpha hero uses the live CoinGecko series; no illustrative price curve. */
+.alpha-visual{display:grid;align-items:center;padding:22px 28px 22px 8px}
+.alpha-live-card{position:relative;width:100%;min-height:244px;padding:19px 20px 14px;overflow:hidden;border:1px solid rgba(157,190,215,.16);border-radius:15px;background:linear-gradient(145deg,rgba(18,34,51,.82),rgba(8,19,30,.86));box-shadow:0 22px 55px rgba(2,8,16,.22)}
+.alpha-live-card::before{position:absolute;inset:0 0 auto;height:1px;content:"";background:linear-gradient(90deg,transparent,rgba(119,221,202,.4),rgba(201,183,135,.22),transparent)}
+.alpha-live-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.alpha-live-head>span:first-child{display:flex;align-items:center;gap:10px;min-width:0}
+.alpha-live-head img{width:31px;height:31px;border-radius:50%;background:rgba(255,255,255,.06)}
+.alpha-live-head>span:first-child>span{display:grid;gap:4px;min-width:0}
+.alpha-live-head small,.alpha-live-foot{color:#8498aa;font:8px var(--mono);letter-spacing:.075em}
+.alpha-live-head b{overflow:hidden;color:#e8edf0;font-size:11px;font-weight:500;text-overflow:ellipsis;white-space:nowrap}
+.alpha-live-head b i{margin-left:5px;color:#8295a8;font:9px var(--mono);font-style:normal}
+.alpha-live-state{padding:6px 8px;border:1px solid currentColor;border-radius:8px;background:rgba(255,255,255,.025);font:10px var(--mono);white-space:nowrap}
+.alpha-live-price{margin-top:14px;color:#f0f2f4;font:400 clamp(25px,3vw,38px)/1 var(--serif);font-variant-numeric:tabular-nums;letter-spacing:-.035em}
+.alpha-live-chart{height:105px;margin:6px -2px 0}
+.alpha-live-chart .sparkline{height:100%}
+.alpha-live-foot{display:flex;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid rgba(188,204,222,.09);font-size:7px;letter-spacing:.03em}
+.alpha-live-empty{min-height:230px;padding:24px;display:grid;align-content:center;justify-items:start;gap:9px;border:1px solid var(--line);border-radius:15px;background:rgba(8,19,30,.72);color:#a1b0be}
+.alpha-live-empty>svg{color:var(--aqua)}.alpha-live-empty b{color:#e1e8ed;font-size:13px;font-weight:500}.alpha-live-empty span{font-size:10px;line-height:1.6}
+@media(max-width:620px){.alpha-hero{min-height:0;grid-template-columns:1fr;align-items:start;padding-bottom:12px}.alpha-text{padding:23px 20px 0}.alpha-visual{position:relative;inset:auto;width:auto;min-height:0;display:block;padding:14px 11px 0;opacity:1}.alpha-live-card{min-height:0;padding:13px 14px 11px;border-radius:12px;background:rgba(8,19,30,.88);backdrop-filter:blur(10px)}.alpha-live-head img{width:25px;height:25px}.alpha-live-head small{font-size:6px}.alpha-live-head b{font-size:9px}.alpha-live-state{padding:5px 6px;font-size:8px}.alpha-live-price{margin-top:9px;font-size:25px}.alpha-live-chart{height:64px;margin-top:2px}.alpha-live-foot{padding-top:7px;font-size:6px}.alpha-live-empty{min-height:125px;margin:0 0 3px;padding:17px}}
+
+/* Give the overview's live watchlist the full instrument width. */
+.market-card{grid-column:1/-1;grid-row:auto}
+@media(max-width:620px){
+  .page-heading p,.balance-note,.muted-paragraph,.alpha-text>p,.exchange-hero-copy>p,
+  .service-card p,.execution-item p,.trade-caption,.identity-provider>p,
+  .identity-provider-foot,.ask-heading>p,.wallet-intro>p,.wallet-security li small{font-size:12px;line-height:1.6}
+  .button-primary,.button-secondary,.button-bright{font-size:12px}
+  .market-tabs button,.category-scroll button{font-size:10px}
+  .service-card h3,.asset-cell b,.mover-row>b{font-size:11px}
+  .small-label,.eyebrow,.alpha-live-head small,.alpha-live-foot{font-size:8px}
+  .alpha-live-head b{font-size:10px}
+}
+
 /* Small-screen market table: keep the key quote visible without horizontal clipping. */
 @media(max-width:620px){
   .market-table{overflow-x:hidden}
