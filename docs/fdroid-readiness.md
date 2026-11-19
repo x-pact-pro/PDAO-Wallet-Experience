@@ -32,9 +32,10 @@ clone build must pass before claiming source-build reproducibility.
 - The metadata declares `NonFreeNet` because some wallet features rely on
   hosted external services and APIs.
 - A clean-clone build exposed that Gradle settings pointed into ignored
-  `node_modules` projects. The source-vendoring script and recipe are being
-  corrected; the previous successful local build did not prove clean-source
-  reproducibility.
+  `node_modules` projects. Commit `d38902b7951e157e679ecb4f946fee1ed29e35f7`
+  vendors those projects and updates Gradle's local paths. The clean-clone
+  build is being rerun against this corrected source before reproducibility is
+  claimed.
 
 ## References
 

@@ -4,11 +4,11 @@
 
 ### r21 — reproducible Android source build and F-Droid metadata
 
-Commit `5951f71115b422d38aea94c72387f597207fd66d` tracks the Capacitor
-runtime/plugin inputs required for an offline Android Gradle build. The root
-`.fdroid.yml` recipe points to that full source commit. The release variant
-built offline with target SDK 35; it is unsigned and has not been installed on
-a device or submitted to F-Droid.
+Commit `d38902b7951e157e679ecb4f946fee1ed29e35f7` vendors the Capacitor
+Android module sources and points Gradle at those tracked modules. The root
+`.fdroid.yml` recipe points to that full source commit. A local release build
+exists with target SDK 35; the corrected clean-clone build is pending. The APK
+is unsigned and has not been installed on a device or submitted to F-Droid.
 
 | Artifact | SHA-256 | State |
 |---|---|---|

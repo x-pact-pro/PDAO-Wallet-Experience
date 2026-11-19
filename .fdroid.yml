@@ -20,7 +20,7 @@ Repo: https://github.com/x-pact-pro/PDAO-Wallet-Experience
 Builds:
   - versionName: 0.1.0
     versionCode: 1
-    commit: 5951f71115b422d38aea94c72387f597207fd66d
+    commit: d38902b7951e157e679ecb4f946fee1ed29e35f7
     subdir: android
     gradle: yes
 UpdateCheckMode: RepoManifest/main
