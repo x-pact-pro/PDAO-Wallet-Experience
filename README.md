@@ -7,7 +7,7 @@ A new, independent PrivateDAO wallet experience for the web, Chrome side panel, 
 - Live market prices and Agent Exchange catalog are fetched from their providers; unavailable data is shown as unavailable.
 - Recovery phrases are encrypted on-device with Web Crypto before they are stored in IndexedDB.
 - Bots includes responsive Policy, encrypted Vault, Team Bots, and DApp Browser tabs. Policies and team profiles are local settings only; they do not execute trades or enable production Autopilot.
-- PrivatePAY can request and display current x402 requirements. It does not sign or settle a payment in this version.
+- PrivatePAY requests payer-bound x402 requirements from the selected local Solana wallet and presents the exact quote, recipient, network, settlement rail, and expiry. Local transaction preparation, signing, verification, and settlement are not yet connected in this version.
 - Wallet signing and trade execution are not enabled yet.
 - Auth0 is staged and disabled until the new production origins are allowlisted. Descope is reserved for machine and agent authorization; scoped API/MCP enforcement still needs to be wired and enabled.
 - The Chrome extension is a Manifest V3 side panel. Android uses Capacitor and keeps its web bundle local.

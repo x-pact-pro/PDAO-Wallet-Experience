@@ -16,6 +16,8 @@ type Section = 'overview' | 'markets' | 'trade' | 'alpha' | 'exchange' | 'wallet
 type Market = { id: string; symbol: string; name: string; image: string; price: number; change: number; volume: number; sparkline?: number[] }
 type NetworkStatus = { network: string; label?: string; status: string; latency_ms?: number; provider?: string; cluster?: string; block_number?: string }
 type Service = { id?: string; name?: string; title?: string; description?: string; summary?: string; category?: string; price?: number | string; currency?: string; pricing?: unknown }
+type PrivatePayAccept = { scheme?: string; network?: string; asset?: string; amount?: string; payTo?: string; maxTimeoutSeconds?: number; extra?: Record<string, unknown> }
+type PrivatePayQuote = { request_id?: string; expires_at?: string; requirements?: { accepts?: PrivatePayAccept[]; resource?: { url?: string; description?: string } }; pdao?: { required?: boolean; selected?: boolean; status?: string } }
 
 const marketUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=true&price_change_percentage=24h'
 const navItems: { id: Section; label: string; icon: LucideIcon; group?: string }[] = [
@@ -155,7 +157,7 @@ function App() {
         {section === 'exchange' && <Exchange services={filteredServices} state={serviceState} query={query} setQuery={setQuery} category={category} setCategory={setCategory} refresh={refreshServices} />}
         {section === 'wallet' && <Wallets onToast={setToast} />}
         {section === 'bots' && <BotsWorkspace prices={prices} services={services} onToast={setToast} onNavigate={changeSection} />}
-        {section === 'payments' && <Payments amount={amount} setAmount={setAmount} onToast={setToast} />}
+        {section === 'payments' && <Payments amount={amount} setAmount={setAmount} onToast={setToast} onNavigate={setSection} />}
         {section === 'ask' && <Ask onToast={setToast} />}
         <footer className="page-footer"><span>PrivateDAO Wallet <span className="footer-dot">·</span> Private by design <span className="footer-dot">·</span> <a href="/terms.html">Terms</a> <span className="footer-dot">·</span> <a href="/privacy.html">Privacy</a></span><span>Prices from CoinGecko <span className="footer-dot">·</span> {priceState === 'live' ? 'Updated just now' : 'Market feed status shown above'}</span></footer>
       </div>
@@ -395,17 +397,29 @@ function BotsWorkspace({ prices, services, onToast, onNavigate }: { prices: Mark
   </section>
 }
 
-function Payments({ amount, setAmount, onToast }: { amount: string; setAmount: (s: string) => void; onToast: (s: string) => void }) {
+function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; setAmount: (s: string) => void; onToast: (s: string) => void; onNavigate: (section: Section) => void }) {
   const [resource, setResource] = useState('https://agents.privatedao.org/services/privatepay-x402')
   const [provider, setProvider] = useState('privatedao-agent-exchange')
-  const [quote, setQuote] = useState<Record<string, unknown> | null>(null)
+  const [wallets, setWallets] = useState<WalletRecord[]>([])
+  const [payerId, setPayerId] = useState('')
+  const [quote, setQuote] = useState<PrivatePayQuote | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  useEffect(() => {
+    let active = true
+    void import('./lib/walletVault').then(({ listWallets }) => listWallets()).then(records => {
+      if (!active) return
+      setWallets(records)
+      setPayerId(current => current || records[0]?.id || '')
+    }).catch(() => { if (active) setError('Local wallet storage is unavailable in this browser.') })
+    return () => { active = false }
+  }, [])
+  const payer = wallets.find(wallet => wallet.id === payerId)
   const requestQuote = async () => {
     setError(''); setQuote(null)
     const match = amount.trim().match(/^(\d+)(?:\.(\d{1,6}))?$/)
-    if (!match || !/^https:\/\//i.test(resource.trim()) || !provider.trim()) {
-      setError('Enter a positive USDC amount, an HTTPS resource and a provider ID.')
+    if (!match || !/^https:\/\//i.test(resource.trim()) || !provider.trim() || !payer) {
+      setError(!payer ? 'Create or import a local wallet first so the quote is bound to its payer address.' : 'Enter a positive USDC amount, an HTTPS resource and a provider ID.')
       return
     }
     const baseUnits = `${match[1]}${(match[2] ?? '').padEnd(6, '0')}`.replace(/^0+(?=\d)/, '')
@@ -414,15 +428,23 @@ function Payments({ amount, setAmount, onToast }: { amount: string; setAmount: (
     try {
       const response = await fetch('https://agents.privatedao.org/api/privatepay/x402/requirements', {
         method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' },
-        body: JSON.stringify({ resource: resource.trim(), provider_id: provider.trim(), amount_base_units: baseUnits, require_pdao_wallet: false }),
+        body: JSON.stringify({ resource: resource.trim(), provider_id: provider.trim(), amount_base_units: baseUnits, payer: payer.solanaAddress, require_pdao_wallet: false }),
       })
-      const result = await response.json() as Record<string, unknown>
+      const result = await response.json() as PrivatePayQuote & { message?: string }
       if (!response.ok) throw new Error(typeof result.message === 'string' ? result.message : `Quote request failed (${response.status}).`)
+      if (!result.requirements?.accepts?.length) throw new Error('The payment provider returned no usable payment requirements.')
       setQuote(result)
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not request a live quote.') }
     finally { setBusy(false) }
   }
-  return <div className="payments-layout"><section className="payment-intro"><span className="payment-eyebrow"><LockKeyhole size={15} /> PRIVATEPAY · X402</span><h2>Private payment,<br />from inside your wallet.</h2><p>Request an exact quote, review the recipient and amount, then authorize payment through the live rail.</p><div className="payment-rail"><span className="rail-status"><i /> SOLANA MAINNET</span><div><b>PrivatePAY x402 operational</b><small>MagicBlock private settlement · quote-bound</small></div><ShieldCheck size={19} /></div><div className="payment-disclosure"><ShieldCheck size={17} /><span>Agent Exchange issues the quote and handles settlement. This screen currently requests and displays the quote.</span></div></section><section className="payment-form card-surface"><div className="payment-form-head"><span className="small-label">PREPARE A PAYMENT</span><span className="form-lock"><LockKeyhole size={14} /> LIVE QUOTE</span></div><label>Recipient resource<input value={resource} onChange={event => { setResource(event.target.value); setQuote(null) }} /></label><label>Provider ID<input value={provider} onChange={event => { setProvider(event.target.value); setQuote(null) }} /></label><label>Requested amount (USDC)<div className="amount-field"><input type="number" min="0" step="0.000001" value={amount} onChange={event => { setAmount(event.target.value); setQuote(null) }} /><span>USDC</span></div></label><button className="button-primary payment-quote" onClick={() => void requestQuote()} disabled={busy}>{busy ? 'Requesting live quote…' : <><ArrowRight size={16} /> Request exact quote</>}</button>{error && <div className="form-error" role="alert">{error}</div>}{quote && <div className="quote-result" role="status"><div><i className="status-light live" /> Live exact quote received</div><pre>{JSON.stringify(quote, null, 2)}</pre><p>This quote is bound to its stated payment details. No funds move when requesting a quote.</p></div>}<div className="form-separator" /><div className="existing-link"><b>Check an existing payment link</b><p>Payment-link status lookup will be connected to the merchant checkout contract.</p><input placeholder="Paste an Agent Exchange payment link" /><button className="button-secondary" onClick={() => onToast('Payment-link status lookup is not connected in this app yet.')}>Check payment link <ArrowUpRight size={15} /></button></div></section></div>
+  const accept = quote?.requirements?.accepts?.[0]
+  const exactAmount = accept?.amount && /^\d+$/.test(accept.amount) ? `${(BigInt(accept.amount) / 1_000_000n).toString()}.${(BigInt(accept.amount) % 1_000_000n).toString().padStart(6, '0')} USDC` : null
+  const copyPayTo = async () => {
+    if (!accept?.payTo) return
+    try { await navigator.clipboard.writeText(accept.payTo); onToast('Quoted recipient copied.') }
+    catch { onToast('Clipboard access is unavailable in this context.') }
+  }
+  return <div className="payments-layout"><section className="payment-intro"><span className="payment-eyebrow"><LockKeyhole size={15} /> PRIVATEPAY · X402</span><h2>Private payment,<br />from inside your wallet.</h2><p>Request a live quote and inspect its exact amount, network and recipient before continuing.</p><div className="payment-rail"><span className="rail-status"><i /> SOLANA MAINNET</span><div><b>PrivatePAY x402 operational</b><small>MagicBlock private settlement · quote-bound</small></div><ShieldCheck size={19} /></div><div className="payment-disclosure"><ShieldCheck size={17} /><span>Agent Exchange returns the quote and settlement requirements. A quote alone does not move funds.</span></div></section><section className="payment-form card-surface"><div className="payment-form-head"><span className="small-label">PREPARE A PAYMENT</span><span className="form-lock"><LockKeyhole size={14} /> LIVE QUOTE</span></div>{payer ? <label>Paying wallet<select value={payerId} onChange={event => { setPayerId(event.target.value); setQuote(null) }}>{wallets.map(wallet => <option key={wallet.id} value={wallet.id}>{wallet.solanaAddress.slice(0, 8)}…{wallet.solanaAddress.slice(-6)}</option>)}</select><small className="payer-address">{payer.solanaAddress}</small></label> : <div className="wallet-needed"><span>No local wallet is linked yet.</span><button className="text-action" onClick={() => onNavigate('wallet')}>Create or import wallet <ArrowUpRight size={14} /></button></div>}<label>Recipient resource<input value={resource} onChange={event => { setResource(event.target.value); setQuote(null) }} /></label><label>Provider ID<input value={provider} onChange={event => { setProvider(event.target.value); setQuote(null) }} /></label><label>Requested amount (USDC)<div className="amount-field"><input type="number" min="0" step="0.000001" value={amount} onChange={event => { setAmount(event.target.value); setQuote(null) }} /><span>USDC</span></div></label><button className="button-primary payment-quote" onClick={() => void requestQuote()} disabled={busy}>{busy ? 'Requesting live quote…' : <><ArrowRight size={16} /> Request exact quote</>}</button>{error && <div className="form-error" role="alert">{error}</div>}{quote && accept && <div className="quote-result" role="status"><div className="quote-result-heading"><i className="status-light live" /> Exact payment quote <span>{accept.scheme ?? 'x402'}</span></div><div className="quote-value">{exactAmount ?? 'Amount unavailable'}</div><div className="quote-detail-grid"><div><small>NETWORK</small><b>{accept.network ?? '—'}</b></div><div><small>SETTLEMENT</small><b>{String(accept.extra?.settlement ?? '—')}</b></div><div className="quote-recipient"><small>QUOTED RECIPIENT</small><code>{accept.payTo ?? '—'}</code>{accept.payTo && <button className="quote-copy" onClick={() => void copyPayTo()}>Copy</button>}</div><div><small>QUOTE EXPIRES</small><b>{quote.expires_at ? new Date(quote.expires_at).toLocaleString() : `${accept.maxTimeoutSeconds ?? '—'} seconds`}</b></div></div><div className="quote-reference"><span>Request</span><code>{quote.request_id ?? '—'}</code>{quote.pdao?.required && <span className="quote-pdao">PDAO required</span>}</div><p>Terms are bound to this quote. Payment requires wallet authorization and a confirmed settlement receipt.</p><details><summary>View complete provider response</summary><pre>{JSON.stringify(quote, null, 2)}</pre></details></div>}<div className="form-separator" /><div className="existing-link"><b>Check an existing payment link</b><p>Payment-link status lookup will be connected to the merchant checkout contract.</p><input placeholder="Paste an Agent Exchange payment link" /><button className="button-secondary" onClick={() => onToast('Payment-link status lookup is not connected in this app yet.')}>Check payment link <ArrowUpRight size={15} /></button></div></section></div>
 }
 
 function Ask({ onToast }: { onToast: (s: string) => void }) {

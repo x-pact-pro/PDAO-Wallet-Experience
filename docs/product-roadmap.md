@@ -16,7 +16,8 @@
 - [x] Agent Exchange live catalog and category/search filters. Quote-first service jobs and receipt verification remain open.
 
 ## Phase 4 — Payments and trading
-- [ ] Canonical PrivatePAY status, exact requirements quote, locally inspected/signed transaction, verification and settlement flow. The current app requests and displays requirements only.
+- [x] Payer-bound PrivatePAY x402 requirements quote with a readable exact-terms review card.
+- [ ] Canonical status view, local transaction preparation and inspection, wallet signing, verification, settlement, and confirmed receipt flow. Current implementation stops after the quote.
 - [x] Responsive Trading workspace surfaces: local policy preferences, encrypted local bot-secret vault, team profiles, and external DApp directory.
 - [ ] Connect team profiles to authorized trading-agent APIs; add provider route discovery, quote/sign/receipt execution, and live status without exposing wallet secrets.
 
