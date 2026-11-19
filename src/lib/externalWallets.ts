@@ -22,8 +22,12 @@ export function discoverSolanaWallets(): readonly Wallet[] {
 
 export function onSolanaWalletsChanged(listener: (wallets: readonly Wallet[]) => void): () => void {
   const wallets = getWallets()
-  const off = wallets.on('register', () => listener(wallets.get()))
-  return off
+  const offRegister = wallets.on('register', () => listener(wallets.get()))
+  const offUnregister = wallets.on('unregister', () => listener(wallets.get()))
+  return () => {
+    offRegister()
+    offUnregister()
+  }
 }
 
 export async function connectSolanaWallet(wallet: Wallet, silent = false): Promise<ConnectedExternalWallet> {

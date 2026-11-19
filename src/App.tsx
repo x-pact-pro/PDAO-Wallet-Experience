@@ -136,13 +136,65 @@ function App() {
   }, [])
   useEffect(() => {
     let active = true
+    const evmProviderCleanup = new Map<string, () => void>()
     const unsubscribe = discoverEvmWallets(option => {
       setEvmProviders(current => current.some(item => item.info.uuid === option.info.uuid) ? current : [...current, option])
       void getExistingEvmAccount(option).then(account => {
         if (active && account) setConnectedWallets(current => current.some(item => item.id === account.id) ? current : [...current, account])
       })
+      const providerId = option.info.uuid
+      const onAccountsChanged = (...args: unknown[]) => {
+        const accounts = args[0]
+        const address = Array.isArray(accounts) ? accounts.find(value => typeof value === 'string' && /^0x[\da-f]{40}$/i.test(value)) : undefined
+        if (typeof address !== 'string') {
+          setConnectedWallets(current => current.filter(item => item.chain !== 'evm' || !item.id.startsWith(`evm:${providerId}:`)))
+          return
+        }
+        void option.provider.request({ method: 'eth_chainId' }).then(chainId => {
+          if (!active) return
+          const next: Extract<ConnectedExternalWallet, { chain: 'evm' }> = {
+            id: `evm:${providerId}:${address}`,
+            chain: 'evm',
+            name: option.info.name,
+            address,
+            icon: option.info.icon,
+            chainId: String(chainId),
+            provider: option.provider,
+          }
+          setConnectedWallets(current => [
+            ...current.filter(item => item.chain !== 'evm' || !item.id.startsWith(`evm:${providerId}:`)),
+            next,
+          ])
+        }).catch(() => {
+          setConnectedWallets(current => current.filter(item => item.chain !== 'evm' || !item.id.startsWith(`evm:${providerId}:`)))
+        })
+      }
+      const onChainChanged = (...args: unknown[]) => {
+        const chainId = args[0]
+        if (typeof chainId !== 'string') return
+        setConnectedWallets(current => current.map(item => item.chain === 'evm' && item.id.startsWith(`evm:${providerId}:`)
+          ? { ...item, chainId }
+          : item))
+      }
+      const onDisconnect = () => {
+        setConnectedWallets(current => current.filter(item => item.chain !== 'evm' || !item.id.startsWith(`evm:${providerId}:`)))
+      }
+      option.provider.on?.('accountsChanged', onAccountsChanged)
+      option.provider.on?.('chainChanged', onChainChanged)
+      option.provider.on?.('disconnect', onDisconnect)
+      const removeProviderListeners = () => {
+        option.provider.removeListener?.('accountsChanged', onAccountsChanged)
+        option.provider.removeListener?.('chainChanged', onChainChanged)
+        option.provider.removeListener?.('disconnect', onDisconnect)
+      }
+      evmProviderCleanup.set(providerId, removeProviderListeners)
     })
-    return () => { active = false; unsubscribe() }
+    return () => {
+      active = false
+      unsubscribe()
+      evmProviderCleanup.forEach(remove => remove())
+      evmProviderCleanup.clear()
+    }
   }, [])
 
   const connectStandard = async (wallet: StandardWallet) => {
