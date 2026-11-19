@@ -20,6 +20,15 @@ device-verified. The APK is not a release-signed F-Droid submission.
 The Vercel team grant has not been approved yet; there is no production URL for
 this new app at this handoff. The existing wallet domain was not changed.
 
+## Public hosting
+
+The current web app is published on GitHub Pages at
+https://x-pact-pro.github.io/PDAO-Wallet-Experience/. A GitHub Actions workflow
+rebuilds and deploys the `main` branch. Pages is configured for HTTPS. The
+first deployment run (`44450268297`) completed successfully and the public
+root and runtime configuration both returned HTTP 200. The existing wallet
+domain remains untouched.
+
 ## Build r9 — Solana token balances
 
 Source commit: `81a54a7` on `main`.

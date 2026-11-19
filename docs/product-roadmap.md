@@ -34,7 +34,7 @@
 - [x] Capacitor Android app shell, Android MWA registration, SDK debug build, and APK checksum.
 - [ ] F-Droid metadata/release signing, app icon and screenshots, plus emulator/device check.
 - [x] Public GitHub source repository.
-- [ ] GitHub Pages deployment on a new project URL (Vercel is optional; keep the existing wallet domain untouched).
+- [x] GitHub Pages deployment on a new project URL (Vercel is optional; keep the existing wallet domain untouched).
 
 ## Phase 7 — Verification and handoff
 - [ ] Desktop/mobile screenshots for every section, responsive/accessibility review, test/build checks, security boundary review.
