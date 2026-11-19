@@ -1,5 +1,37 @@
 # Release handoff
 
+## r24 — accurate small-asset prices and first physical-device evidence
+
+Source `5156629` fixes the market ticker, overview, market table and alpha
+price displays: nonzero prices below one dollar retain four significant digits;
+prices below USD 0.00000001 use scientific notation. Invalid prices display an
+unavailable marker. Portfolio totals retain their existing currency rounding.
+`node --experimental-strip-types scripts/test-price-format.mjs`, TypeScript,
+web and extension builds passed. Targeted lint passed; whole-project lint
+returned warnings from bundled/vendored JavaScript.
+
+Amplify app `d2iwf2bo6lci0r`, Virginia, job `18` succeeded. The public root,
+runtime config, and all referenced JS/CSS assets returned HTTP 200; served
+`index-GIvQj1ya.js` contains the corrected formatter. Web archive SHA-256:
+`8f8fa287504c618416b98d34709e570b90bbb92ce005f279a57a2bf71aa41187`.
+Chrome archive SHA-256:
+`de672d0b2028575ee7069744ddf131ee711f53edaaeba497547a2940f8a1396b`.
+
+The previous r23 debug APK is installed and opens on a Samsung SM-A235F,
+Android API 34; installed package metadata confirms version 0.1.1, code 2,
+target SDK 35. Native WebView captures of Markets, Overview and Wallets report
+384px viewport and document width, without horizontal overflow. Evidence is
+in `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/r23-device-review/`.
+This review discovered the small-price rounding bug above. It does not prove
+wallet-provider authorization, biometric authentication, or funded settlement.
+The r24 Android debug and unsigned release builds completed successfully
+(`421 actionable tasks`, exit 0). The phone disconnected before the updated APK
+could be installed; r23 device evidence does not verify r24. Artifacts and
+SHA256SUMS.txt are in `r24-0.1.1` beside the device captures. The Chrome ZIP is
+published as GitHub preview `v0.1.1-preview.3` and its remote digest matches.
+Debug APK SHA-256: `cd416a297a818576e79265cc8a4ef9284f855c1eb4172a25aefb36333fc7e671`.
+Unsigned release SHA-256: `2a2ce8f05debb4a41710cc695c9354daeb974369823297c9ffb14a7cdb44ecff`.
+
 ## r23 — Auth0 environment guard and 0.1.1 cross-platform preview
 
 Source `3e7c82b` keeps the development Auth0 tenant out of the official
