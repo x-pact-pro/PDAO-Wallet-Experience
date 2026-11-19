@@ -16,7 +16,7 @@ type Market = { id: string; symbol: string; name: string; image: string; price: 
 type NetworkStatus = { network: string; label?: string; status: string; latency_ms?: number; provider?: string; cluster?: string; block_number?: string }
 type Service = { id?: string; name?: string; title?: string; description?: string; summary?: string; category?: string; price?: number | string; currency?: string; pricing?: unknown }
 
-const marketUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=solana,ethereum,bitcoin,usd-coin,chainlink,uniswap&order=market_cap_desc&per_page=20&page=1&sparkline=true&price_change_percentage=24h'
+const marketUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=true&price_change_percentage=24h'
 const navItems: { id: Section; label: string; icon: LucideIcon; group?: string }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Workspace' },
   { id: 'markets', label: 'Markets', icon: Activity },
@@ -93,7 +93,13 @@ function App() {
       setServiceState('live')
     } catch { setServiceState('unavailable') }
   }
-  useEffect(() => { void refreshPrices(); void refreshServices() }, [])
+  useEffect(() => {
+    void refreshPrices()
+    void refreshServices()
+    const marketRefresh = window.setInterval(() => { void refreshPrices() }, 60_000)
+    const serviceRefresh = window.setInterval(() => { void refreshServices() }, 5 * 60_000)
+    return () => { window.clearInterval(marketRefresh); window.clearInterval(serviceRefresh) }
+  }, [])
   useEffect(() => { window.location.hash = section }, [section])
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(''), 3200); return () => window.clearTimeout(timer) }, [toast])
 
