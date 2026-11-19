@@ -22,6 +22,8 @@ this new app at this handoff. The existing wallet domain was not changed.
 
 ## Build r8 — portfolio balance reads
 
+Source commit: `badaa67` on `main`.
+
 This build adds native SOL and ETH balance reads with explicit mainnet labels,
 partial/unavailable states, and RPC provider fallback. It does not include
 SPL/ERC-20 token indexing or native transfer flows.
