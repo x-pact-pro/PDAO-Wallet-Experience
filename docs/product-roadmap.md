@@ -47,5 +47,6 @@
 - [x] AWS Amplify deployment in `us-east-1` on a new app ID; GitHub Pages remains a secondary preview and the existing wallet domain is untouched.
 
 ## Phase 7 — Verification and handoff
-- [ ] Desktop/mobile screenshots for every section, responsive/accessibility review, test/build checks, security boundary review.
+- [x] Capture first-viewport mobile and desktop screenshots for all ten sections; verify no horizontal document overflow at 320, 360, 390, 768, 1024, and 1440 CSS pixels (r20 visual QA evidence).
+- [ ] Complete keyboard and assistive-technology accessibility review, current build checks, and security boundary review.
 - [ ] Verify published app and extension package; provide Android install artifact and F-Droid submission handoff.

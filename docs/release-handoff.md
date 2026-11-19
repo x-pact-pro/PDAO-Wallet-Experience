@@ -2,6 +2,24 @@
 
 ## Current source and infrastructure status — 2026-11-19
 
+### r20 — all-section visual and responsive evidence
+
+Captured the first viewport of all ten sections on the live Wallet Atelier
+Amplify app at 390x844 and 1440x900 CSS pixels. A settled-view browser check
+covered 320, 360, 390, 768, 1024, and 1440 CSS pixels across all ten sections;
+in all 60 observations, document and body scroll widths equaled the viewport.
+Browser page-error output was empty. The initial 390px Overview measurement
+was sampled during React navigation and transiently reported a stale width;
+after the route settled it measured 390px, matching the remaining sections.
+
+The screenshot archive is
+`/home/x-pact/Desktop/PDAO-Wallet-Deliverables/PDAO-Wallet-Visual-QA-20261119-r20.zip`
+(SHA-256 `60d546ddbfc970f4a7fda72723d57f6d7ff120ba6473bd6bbcfc538f0d7561e2`).
+This records layout and visual evidence only; keyboard/screen-reader
+accessibility, wallet interactions, Chrome installation, and Android device
+behavior remain unverified. No application code changed in this QA pass, so
+the live deployment remains r19.
+
 ### Repository ownership
 
 `x-pact-pro/PDAO-Wallet` is the original wallet repository associated with the

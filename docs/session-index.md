@@ -1,6 +1,6 @@
 # PDAO Wallet session index
 
-Updated: 2026-11-19 (r19). This index reconciles the original brief with the current
+Updated: 2026-11-19 (r20 QA). This index reconciles the original brief with the current
 independent product, repositories, deployed AWS resources, and verified gaps.
 It is a navigation/handoff aid, not proof that unfinished product features are
 complete.
@@ -96,6 +96,13 @@ older `PDAO Wallet` Auth0 client was not modified.
   integrations yet. A DApp link is not an agent execution result.
 
 ## Current handoff (r19)
+
+- r20 visual QA captured the first viewport of all ten tabs at 390x844 and
+  1440x900 and measured all ten at 320, 360, 390, 768, 1024, and 1440 CSS
+  pixels. All 60 settled views had document/body widths equal to the viewport;
+  browser page-error output was empty. Evidence archive and hash are in
+  `docs/release-handoff.md`. This is not a new deployed app version and does
+  not verify assistive technology, signing, settlement, or native-device flows.
 
 - Repository mapping is explicit: `x-pact-pro/PDAO-Wallet` is the original
   repository for the existing Amplify app `d1yr54h1b2l04l`; this separate
