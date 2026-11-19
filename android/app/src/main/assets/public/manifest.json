@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PrivateDAO Wallet",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A considered self-custody wallet and market intelligence workspace.",
   "permissions": [
     "sidePanel"
