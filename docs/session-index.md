@@ -1,6 +1,6 @@
 # PDAO Wallet session index
 
-Updated: 2026-11-19 (r16). This index reconciles the original brief with the current
+Updated: 2026-11-19 (r17). This index reconciles the original brief with the current
 independent product, repositories, deployed AWS resources, and verified gaps.
 It is a navigation/handoff aid, not proof that unfinished product features are
 complete.
@@ -95,7 +95,7 @@ older `PDAO Wallet` Auth0 client was not modified.
 - Pump.fun, Moonshot, and other meme-venue connections are not live trading
   integrations yet. A DApp link is not an agent execution result.
 
-## Current handoff (r16 deployed)
+## Current handoff (r17 built; deployment pending)
 
 - The production hostname is not serving the new Atelier build yet. The old
   app association was removed and the new Amplify association is
@@ -103,6 +103,10 @@ older `PDAO Wallet` Auth0 client was not modified.
   d3girmftahg4rp.cloudfront.net`. Namecheap still publishes the former
   distribution target. Route 53 is not authoritative.
 
+- r17 adds a persistent compact desktop sidebar and replaces the placeholder
+  support toast with a link to the new repository issue tracker. Web, Chrome MV3,
+  and Android debug builds succeeded. Artifacts and hashes are in
+  `docs/release-handoff.md`; r17 has not yet been pushed or deployed.
 - r16 source commit `b27218d` is pushed to `main` and deployed to the new AWS
   Amplify app `d2iwf2bo6lci0r` in `us-east-1` as job `10` (`SUCCEED`). The live
   root and runtime config returned HTTP 200; the published application bundle

@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import './App.css'
+import './AppRefinements.css'
 import './Ask.css'
 
 type Section = 'overview' | 'markets' | 'trade' | 'alpha' | 'exchange' | 'wallet' | 'bots' | 'payments' | 'identity' | 'ask'
@@ -80,6 +81,7 @@ function App() {
   const [section, setSection] = useState<Section>(() => (window.location.hash.replace('#', '') as Section) || 'overview')
   const [welcome, setWelcome] = useState(!sessionStorage.getItem('pdao-entered'))
   const [mobileNav, setMobileNav] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('pdao-sidebar-collapsed') === 'true')
   const [prices, setPrices] = useState<Market[]>([])
   const [priceState, setPriceState] = useState<'loading' | 'live' | 'unavailable'>('loading')
   const [services, setServices] = useState<Service[]>([])
@@ -282,18 +284,24 @@ function App() {
 
   if (welcome) return <Welcome onEnter={enter} />
 
-  return <div className="app-shell">
+  const toggleSidebar = () => setSidebarCollapsed(current => {
+    const next = !current
+    localStorage.setItem('pdao-sidebar-collapsed', String(next))
+    return next
+  })
+
+  return <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
     <aside className={`sidebar ${mobileNav ? 'sidebar-open' : ''}`}>
       <div className="sidebar-brand"><Mark size={40} /><span><b>PrivateDAO</b><small>WALLET · MAINNET</small></span><button className="icon-button sidebar-close" aria-label="Close navigation" onClick={() => setMobileNav(false)}><X size={18} /></button></div>
       <div className="workspace-select"><span className="workspace-avatar">P</span><span className="workspace-label"><b>Personal workspace</b><small>Self-custody account</small></span><ChevronDown size={15} /></div>
       <nav className="primary-nav" aria-label="Main navigation">
         {navItems.map((item, index) => <div key={item.id}>
           {item.group && <span className="nav-group">{item.group}</span>}
-          <button className={`nav-link ${section === item.id ? 'active' : ''}`} onClick={() => changeSection(item.id)}><item.icon size={18} strokeWidth={1.8} /><span>{item.label}</span>{item.id === 'payments' && <i className="live-tag">LIVE</i>}</button>
+          <button className={`nav-link ${section === item.id ? 'active' : ''}`} title={sidebarCollapsed ? item.label : undefined} onClick={() => changeSection(item.id)}><item.icon size={18} strokeWidth={1.8} /><span>{item.label}</span>{item.id === 'payments' && <i className="live-tag">LIVE</i>}</button>
           {index === 0 && <div className="nav-divider" />}
         </div>)}
       </nav>
-      <div className="sidebar-bottom"><div className="privacy-card"><span className="privacy-emblem"><Fingerprint size={25} /></span><div><b>Private by design</b><p>Your assets. Your decisions.</p></div><ArrowUpRight size={16} /></div><button className="help-link" onClick={() => setToast('Help center is being prepared for this new app.')}><CircleHelp size={16} /> Help & support</button></div>
+      <div className="sidebar-bottom"><div className="privacy-card"><span className="privacy-emblem"><Fingerprint size={25} /></span><div><b>Private by design</b><p>Your assets. Your decisions.</p></div><ArrowUpRight size={16} /></div><a className="help-link" href="https://github.com/x-pact-pro/PDAO-Wallet-Experience/issues" target="_blank" rel="noreferrer"><CircleHelp size={16} /> Help & support <ExternalLink size={13} /></a></div>
     </aside>
     {mobileNav && <button className="scrim" aria-label="Close navigation" onClick={() => setMobileNav(false)} />}
 
@@ -309,7 +317,7 @@ function App() {
       </header>
       <MarketTicker prices={prices} state={priceState} refresh={refreshPrices} />
       <div className="content-wrap">
-        <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-dot" />{currentMeta.eyebrow}</div><h1>{currentMeta.title}</h1><p>{currentMeta.subtitle}</p></div><div className="heading-utilities"><span className="secure-caption"><ShieldCheck size={15} /> Self-custody first</span><button className="icon-button quiet-button" aria-label="Collapse sidebar" onClick={() => setToast('Navigation is ready for your workspace.')}><PanelLeftClose size={18} /></button></div></div>
+        <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-dot" />{currentMeta.eyebrow}</div><h1>{currentMeta.title}</h1><p>{currentMeta.subtitle}</p></div><div className="heading-utilities"><span className="secure-caption"><ShieldCheck size={15} /> Self-custody first</span><button className="icon-button quiet-button" aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'} onClick={toggleSidebar}><PanelLeftClose className={sidebarCollapsed ? 'sidebar-icon-collapsed' : ''} size={18} /></button></div></div>
         {section === 'overview' && <Overview prices={prices} priceState={priceState} connectedWallets={connectedWallets} onNavigate={changeSection} refresh={refreshPrices} />}
         {section === 'markets' && <Markets prices={prices} state={priceState} refresh={refreshPrices} />}
         {section === 'trade' && <Trade prices={prices} amount={amount} setAmount={setAmount} onToast={setToast} connectedWallets={connectedWallets} onNavigate={changeSection} />}

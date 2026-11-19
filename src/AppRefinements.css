@@ -1,0 +1,173 @@
+/* Functional refinements for the shared wallet shell. */
+.sidebar,
+.main-area {
+  transition: width 180ms ease, margin 180ms ease, padding 180ms ease;
+}
+
+.app-shell.sidebar-collapsed .sidebar {
+  width: 78px;
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
+.app-shell.sidebar-collapsed .sidebar-brand {
+  justify-content: center;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.app-shell.sidebar-collapsed .sidebar-brand > span,
+.app-shell.sidebar-collapsed .sidebar-brand .sidebar-close,
+.app-shell.sidebar-collapsed .workspace-label,
+.app-shell.sidebar-collapsed .workspace-select > svg,
+.app-shell.sidebar-collapsed .nav-group,
+.app-shell.sidebar-collapsed .nav-link > span,
+.app-shell.sidebar-collapsed .nav-link > .live-tag,
+.app-shell.sidebar-collapsed .privacy-card > div,
+.app-shell.sidebar-collapsed .privacy-card > svg {
+  display: none;
+}
+
+.app-shell.sidebar-collapsed .workspace-select {
+  justify-content: center;
+  margin: 20px 0 25px;
+  padding: 9px 0;
+}
+
+.app-shell.sidebar-collapsed .primary-nav > div {
+  position: relative;
+}
+
+.app-shell.sidebar-collapsed .nav-link {
+  justify-content: center;
+  padding: 0;
+}
+
+.app-shell.sidebar-collapsed .sidebar-bottom {
+  display: grid;
+  justify-items: center;
+}
+
+.app-shell.sidebar-collapsed .privacy-card {
+  min-height: 52px;
+  width: 52px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.app-shell.sidebar-collapsed .help-link {
+  justify-content: center;
+  padding: 10px;
+  font-size: 0;
+}
+
+.app-shell.sidebar-collapsed .help-link > svg:last-child {
+  display: none;
+}
+
+.app-shell.sidebar-collapsed .main-area {
+  width: calc(100% - 78px);
+  margin-left: 78px;
+}
+
+.sidebar-icon-collapsed {
+  transform: scaleX(-1);
+}
+
+.help-link {
+  text-decoration: none;
+}
+
+.help-link > svg:last-child {
+  opacity: .65;
+}
+
+@media (max-width: 850px) {
+  .app-shell.sidebar-collapsed .sidebar {
+    width: 240px;
+    padding: 24px 16px 18px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-brand {
+    justify-content: flex-start;
+    padding: 0 8px 18px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-brand > span,
+  .app-shell.sidebar-collapsed .sidebar-brand .sidebar-close,
+  .app-shell.sidebar-collapsed .workspace-label,
+  .app-shell.sidebar-collapsed .workspace-select > svg,
+  .app-shell.sidebar-collapsed .nav-group,
+  .app-shell.sidebar-collapsed .nav-link > span,
+  .app-shell.sidebar-collapsed .nav-link > .live-tag,
+  .app-shell.sidebar-collapsed .privacy-card > div,
+  .app-shell.sidebar-collapsed .privacy-card > svg {
+    display: initial;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-brand .sidebar-close {
+    display: grid;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-brand > span,
+  .app-shell.sidebar-collapsed .workspace-label,
+  .app-shell.sidebar-collapsed .privacy-card > div {
+    display: grid;
+  }
+
+  .app-shell.sidebar-collapsed .nav-group {
+    display: block;
+  }
+
+  .app-shell.sidebar-collapsed .help-link {
+    font-size: 11px;
+  }
+
+  .app-shell.sidebar-collapsed .help-link > svg:last-child {
+    display: initial;
+  }
+
+  .app-shell.sidebar-collapsed .workspace-select {
+    justify-content: flex-start;
+    margin: 20px 0 25px;
+    padding: 9px 10px;
+  }
+
+  .app-shell.sidebar-collapsed .nav-link {
+    justify-content: flex-start;
+    padding: 0 11px;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-bottom {
+    display: block;
+  }
+
+  .app-shell.sidebar-collapsed .privacy-card {
+    width: auto;
+    min-height: 94px;
+    padding: 14px 12px;
+    display: grid;
+    grid-template-columns: 32px 1fr 16px;
+    justify-items: stretch;
+  }
+
+  .app-shell.sidebar-collapsed .help-link {
+    justify-content: flex-start;
+    padding: 9px 6px;
+  }
+
+  .app-shell.sidebar-collapsed .main-area {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .main-area {
+    transition: none;
+  }
+}
+

@@ -6,6 +6,7 @@
 ## Phase 1 — Foundation
 - [x] Establish independent React/TypeScript app, product design tokens, production build and design documentation.
 - [x] Build an interactive welcome screen and responsive application shell with eight sections and policy/legal footer.
+- [x] Implement a persistent compact desktop navigation state and route the support link to the new repository issue tracker (r17).
 
 ## Phase 2 — Local custody
 - [x] Generate/import BIP39 recovery phrases; derive Solana and EVM addresses; encrypt the phrase locally with WebCrypto; verify the passphrase.

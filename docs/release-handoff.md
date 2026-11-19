@@ -2,6 +2,24 @@
 
 ## Current source and infrastructure status — 2026-11-19
 
+### r17 — functional workspace controls
+
+Source changes add a persistent compact sidebar for desktop and replace the
+placeholder support toast with the Wallet Experience issue tracker. Web and
+Chrome MV3 production builds and an Android target SDK 35 debug build passed.
+These builds do not verify device-only wallet or biometric flows. The
+headless-browser preview attempt did not produce a fresh screenshot, so this
+change has build evidence but no new rendered UI capture.
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Web-0.1.0-20261119-r17.zip` | `a257c6e2ce80c59cd368e4b4dac698a97a88cb54c5ce0a7d1cb5575fd16bec3c` | Built; pending deployment |
+| `PDAO-Wallet-Chrome-0.1.0-20261119-r17.zip` | `731ce7e9369689cc4e3e16ad4e0044ac9e73297f2e6d627ad33c1f7a0ab4cd3e` | Chrome MV3 build |
+| `PDAO-Wallet-Android-debug-0.1.0-20261119-r17.apk` | `c535a7a66e81233f7d08d5be3862910bd830c1aac1b0c14ec24d72a44b73e556` | Android target SDK 35 debug build |
+
+The official custom hostname remains unresolved pending the Namecheap DNS
+change described below.
+
 ### Official hostname routing
 
 The existing `x-pact-pro/PDAO-Wallet` repository is the source for the original

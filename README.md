@@ -16,6 +16,7 @@ A new, independent PrivateDAO wallet experience for the web, Chrome side panel, 
 - A PDAO-owned agent identity API is deployed in AWS Virginia with a Descope JWT authorizer and per-route scope enforcement. Descope Resource/client setup and valid-token acceptance remain pending; see `docs/identity-and-agent-auth.md`.
 - Agent Exchange catalog prices are read from the live provider. Trading/AI subscriptions, usage commissions, automatic PDAO conversion, and treasury settlement are not enabled until their provider quotes, conversion route, and treasury contract are confirmed.
 - The Chrome extension is a Manifest V3 side panel. Android uses Capacitor and keeps its web bundle local.
+- The workspace navigation can be compacted on desktop and remembers the choice. Help links to the active source issue tracker.
 
 ## Development
 
