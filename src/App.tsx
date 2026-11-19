@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
+import type { Wallet as StandardWallet } from '@wallet-standard/base'
 import { checkRecoveryPhrase, createRecoveryPhrase } from './lib/mnemonic'
 import type { PreparedSolanaTransaction, WalletRecord } from './lib/walletVault'
+import { connectEvmWallet, connectSolanaWallet, discoverEvmWallets, discoverSolanaWallets, disconnectSolanaWallet, getExistingEvmAccount, onSolanaWalletsChanged, signWithExternalSolanaWallet, type ConnectedExternalWallet, type EvmProviderOption } from './lib/externalWallets'
 import {
   Activity, ArrowDownLeft, ArrowLeftRight, ArrowRight, ArrowUpRight,
   Bell, Bot, ChevronDown, CircleHelp, Command, Compass, ExternalLink,
@@ -75,6 +77,57 @@ function App() {
   const [amount, setAmount] = useState('0.10')
   const [menuOpen, setMenuOpen] = useState(false)
   const [toast, setToast] = useState('')
+  const [standardWallets, setStandardWallets] = useState<readonly StandardWallet[]>([])
+  const [evmProviders, setEvmProviders] = useState<EvmProviderOption[]>([])
+  const [connectedWallets, setConnectedWallets] = useState<ConnectedExternalWallet[]>([])
+
+  useEffect(() => {
+    let active = true
+    const refresh = (wallets: readonly StandardWallet[]) => {
+      setStandardWallets(wallets)
+      void Promise.all(wallets.map(wallet => connectSolanaWallet(wallet, true).catch(() => null))).then(accounts => {
+        if (!active) return
+        setConnectedWallets(current => {
+          const next: ConnectedExternalWallet[] = [...current.filter(item => item.chain !== 'solana')]
+          accounts.forEach(account => { if (account && !next.some(item => item.id === account.id)) next.push(account) })
+          return next
+        })
+      })
+    }
+    refresh(discoverSolanaWallets())
+    const unsubscribe = onSolanaWalletsChanged(refresh)
+    return () => { active = false; unsubscribe() }
+  }, [])
+  useEffect(() => {
+    let active = true
+    const unsubscribe = discoverEvmWallets(option => {
+      setEvmProviders(current => current.some(item => item.info.uuid === option.info.uuid) ? current : [...current, option])
+      void getExistingEvmAccount(option).then(account => {
+        if (active && account) setConnectedWallets(current => current.some(item => item.id === account.id) ? current : [...current, account])
+      })
+    })
+    return () => { active = false; unsubscribe() }
+  }, [])
+
+  const connectStandard = async (wallet: StandardWallet) => {
+    try {
+      const account = await connectSolanaWallet(wallet)
+      setConnectedWallets(current => current.some(item => item.id === account.id) ? current : [...current, account])
+      setToast(`${wallet.name} connected. Signing stays inside its wallet approval.`)
+    } catch (reason) { setToast(reason instanceof Error ? reason.message : `Could not connect ${wallet.name}.`) }
+  }
+  const connectEvm = async (option: EvmProviderOption) => {
+    try {
+      const account = await connectEvmWallet(option)
+      setConnectedWallets(current => current.some(item => item.id === account.id) ? current : [...current, account])
+      setToast(`${option.info.name} connected.`)
+    } catch (reason) { setToast(reason instanceof Error ? reason.message : `Could not connect ${option.info.name}.`) }
+  }
+  const disconnectExternal = (id: string) => {
+    const target = connectedWallets.find(item => item.id === id)
+    if (target?.chain === 'solana') void disconnectSolanaWallet(target.wallet).catch(() => undefined)
+    setConnectedWallets(current => current.filter(item => item.id !== id))
+  }
 
   const refreshPrices = async () => {
     setPriceState('loading')
@@ -155,12 +208,12 @@ function App() {
         <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-dot" />{currentMeta.eyebrow}</div><h1>{currentMeta.title}</h1><p>{currentMeta.subtitle}</p></div><div className="heading-utilities"><span className="secure-caption"><ShieldCheck size={15} /> Self-custody first</span><button className="icon-button quiet-button" aria-label="Collapse sidebar" onClick={() => setToast('Navigation is ready for your workspace.')}><PanelLeftClose size={18} /></button></div></div>
         {section === 'overview' && <Overview prices={prices} priceState={priceState} onNavigate={changeSection} refresh={refreshPrices} />}
         {section === 'markets' && <Markets prices={prices} state={priceState} refresh={refreshPrices} />}
-        {section === 'trade' && <Trade prices={prices} amount={amount} setAmount={setAmount} onToast={setToast} />}
+        {section === 'trade' && <Trade prices={prices} amount={amount} setAmount={setAmount} onToast={setToast} connectedWallets={connectedWallets} onNavigate={setSection} />}
         {section === 'alpha' && <Alpha prices={prices} state={priceState} onNavigate={changeSection} />}
         {section === 'exchange' && <Exchange services={filteredServices} state={serviceState} query={query} setQuery={setQuery} category={category} setCategory={setCategory} refresh={refreshServices} />}
-        {section === 'wallet' && <Wallets onToast={setToast} />}
+        {section === 'wallet' && <Wallets onToast={setToast} standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={connectStandard} onConnectEvm={connectEvm} onDisconnectExternal={disconnectExternal} />}
         {section === 'bots' && <BotsWorkspace prices={prices} services={services} onToast={setToast} onNavigate={changeSection} />}
-        {section === 'payments' && <Payments amount={amount} setAmount={setAmount} onToast={setToast} onNavigate={setSection} />}
+        {section === 'payments' && <Payments amount={amount} setAmount={setAmount} onToast={setToast} onNavigate={setSection} connectedWallets={connectedWallets} />}
         {section === 'ask' && <Ask onToast={setToast} />}
         <footer className="page-footer"><span>PrivateDAO Wallet <span className="footer-dot">·</span> Private by design <span className="footer-dot">·</span> <a href="/terms.html">Terms</a> <span className="footer-dot">·</span> <a href="/privacy.html">Privacy</a></span><span>Prices from CoinGecko <span className="footer-dot">·</span> {priceState === 'live' ? 'Updated just now' : 'Market feed status shown above'}</span></footer>
       </div>
@@ -215,10 +268,11 @@ function NetworkHealth() {
   return <section className="network-health card-surface"><div className="network-health-head"><div><span className="small-label">NETWORK CONNECTIVITY</span><h2>Across the ecosystem.</h2></div><button className="refresh-inline" onClick={() => void refresh()}><RefreshCw size={13} /> Refresh</button></div>{state === 'live' ? <div className="network-health-grid">{items.map(item => <article key={item.network} className="network-health-item"><span className={`network-health-dot ${item.status === 'rpc_healthy' ? 'healthy' : ''}`} /><div><b>{item.label ?? item.network.replaceAll('-', ' ')}</b><small>{item.status.replaceAll('_', ' ')}{item.cluster ? ` · ${item.cluster}` : ''}</small></div><span className="network-latency">{typeof item.latency_ms === 'number' ? `${item.latency_ms} ms` : '—'}</span></article>)}</div> : <div className="network-health-empty">{state === 'loading' ? 'Checking live network endpoints…' : 'Network health is unavailable.'} <button onClick={() => void refresh()}>Retry</button></div>}<div className="network-health-foot"><span>Read-only RPC checks</span><span>{observed ? `Updated ${observed}` : 'Status pending'}</span></div></section>
 }
 
-function Trade({ prices, amount, setAmount, onToast }: { prices: Market[]; amount: string; setAmount: (s: string) => void; onToast: (s: string) => void }) {
+function Trade({ prices, amount, setAmount, onToast, connectedWallets, onNavigate }: { prices: Market[]; amount: string; setAmount: (s: string) => void; onToast: (s: string) => void; connectedWallets: ConnectedExternalWallet[]; onNavigate: (s: Section) => void }) {
   const [from, setFrom] = useState('SOL'), [to, setTo] = useState('USDC')
   const asset = prices.find(coin => coin.symbol === from)
-  return <div className="trade-layout"><section className="trade-panel card-surface"><div className="trade-heading"><div><span className="small-label">SWAP ASSETS</span><h2>From one asset to another.</h2></div><button className="icon-button"><RefreshCw size={16} /></button></div><div className="trade-input-card"><div className="trade-input-top"><span>You pay</span><span>Available balance <b>—</b></span></div><div className="trade-input-line"><input inputMode="decimal" value={amount} onChange={event => setAmount(event.target.value)} aria-label="Amount to trade" /><select value={from} onChange={event => setFrom(event.target.value)} aria-label="Asset to pay">{['SOL','ETH','USDC','BTC'].map(ticker => <option key={ticker}>{ticker}</option>)}</select></div><div className="trade-fiat">{asset && Number(amount) ? `≈ ${money(Number(amount) * asset.price)}` : 'Connect a wallet to see your balance'}</div></div><button className="swap-direction" aria-label="Reverse assets" onClick={() => { setFrom(to); setTo(from) }}><ArrowDownLeft size={17} /></button><div className="trade-input-card receive-card"><div className="trade-input-top"><span>You receive</span><span>Live quote required</span></div><div className="trade-input-line"><span className="receive-placeholder">—</span><select value={to} onChange={event => setTo(event.target.value)} aria-label="Asset to receive">{['USDC','SOL','ETH','BTC'].map(ticker => <option key={ticker}>{ticker}</option>)}</select></div><div className="trade-fiat">Output appears after a verified provider quote</div></div><div className="trade-details"><span>Network <b>Solana Mainnet</b></span><span>Price impact <b>—</b></span><span>Provider <b>Jupiter quote required</b></span></div><button className="button-primary trade-submit" onClick={() => onToast('Connect a Solana wallet to request a fresh Jupiter quote.')}><ArrowLeftRight size={16} /> Connect wallet for a live quote</button><p className="trade-caption"><ShieldCheck size={14} /> No order is sent until you review and sign it in your wallet.</p></section><aside className="trade-aside card-surface"><span className="small-label">EXECUTION PRINCIPLES</span><div className="execution-item"><span><Activity size={18} /></span><div><b>Fresh quote</b><p>Route and amount come from the swap provider in real time.</p></div></div><div className="execution-item"><span><ShieldCheck size={18} /></span><div><b>You approve every step</b><p>Review the transaction and sign locally before it is submitted.</p></div></div><div className="execution-item"><span><LockKeyhole size={18} /></span><div><b>Your keys stay here</b><p>Private keys never leave your browser or device.</p></div></div><div className="aside-market"><div className="aside-market-head"><span>MARKET SNAPSHOT</span><span className="service-live"><i /> LIVE</span></div>{prices.slice(0,3).map(coin => <div className="aside-market-row" key={coin.id}><img src={coin.image} alt="" /><b>{coin.symbol}</b><span>{money(coin.price, coin.price < 1 ? 4 : 2)}</span><small className={coin.change >= 0 ? 'positive' : 'negative'}>{coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}%</small></div>)}</div></aside></div>
+  const solanaWallet = connectedWallets.find((wallet): wallet is Extract<ConnectedExternalWallet, { chain: 'solana' }> => wallet.chain === 'solana')
+  return <div className="trade-layout"><section className="trade-panel card-surface"><div className="trade-heading"><div><span className="small-label">SWAP ASSETS</span><h2>From one asset to another.</h2></div><button className="icon-button"><RefreshCw size={16} /></button></div><div className="trade-input-card"><div className="trade-input-top"><span>You pay</span><span>Available balance <b>—</b></span></div><div className="trade-input-line"><input inputMode="decimal" value={amount} onChange={event => setAmount(event.target.value)} aria-label="Amount to trade" /><select value={from} onChange={event => setFrom(event.target.value)} aria-label="Asset to pay">{['SOL','ETH','USDC','BTC'].map(ticker => <option key={ticker}>{ticker}</option>)}</select></div><div className="trade-fiat">{asset && Number(amount) ? `≈ ${money(Number(amount) * asset.price)}` : 'Connect a wallet to see your balance'}</div></div><button className="swap-direction" aria-label="Reverse assets" onClick={() => { setFrom(to); setTo(from) }}><ArrowDownLeft size={17} /></button><div className="trade-input-card receive-card"><div className="trade-input-top"><span>You receive</span><span>Live quote required</span></div><div className="trade-input-line"><span className="receive-placeholder">—</span><select value={to} onChange={event => setTo(event.target.value)} aria-label="Asset to receive">{['USDC','SOL','ETH','BTC'].map(ticker => <option key={ticker}>{ticker}</option>)}</select></div><div className="trade-fiat">Output appears after a verified provider quote</div></div><div className="trade-details"><span>Network <b>Solana Mainnet</b></span><span>Price impact <b>—</b></span><span>Provider <b>Jupiter quote required</b></span></div>{solanaWallet ? <div className="trade-connected-wallet"><img src={solanaWallet.icon} alt="" /><span><b>{solanaWallet.name}</b><small>{solanaWallet.address.slice(0, 8)}…{solanaWallet.address.slice(-6)} · connected</small></span><i className="external-connected-dot" /></div> : <div className="trade-wallet-needed"><span>Connect a compatible Solana wallet to continue.</span><button className="text-action" onClick={() => onNavigate('wallet')}>View detected wallets <ArrowRight size={14} /></button></div>}<button className="button-primary trade-submit" onClick={() => solanaWallet ? onToast('Live swap routing is not connected in this app yet.') : onNavigate('wallet')}><ArrowLeftRight size={16} /> {solanaWallet ? 'Live swap route unavailable' : 'Connect a wallet'}</button><p className="trade-caption"><ShieldCheck size={14} /> No order is sent until you review and sign it in your wallet.</p></section><aside className="trade-aside card-surface"><span className="small-label">EXECUTION PRINCIPLES</span><div className="execution-item"><span><Activity size={18} /></span><div><b>Fresh quote</b><p>Route and amount come from the swap provider in real time.</p></div></div><div className="execution-item"><span><ShieldCheck size={18} /></span><div><b>You approve every step</b><p>Review the transaction and sign locally before it is submitted.</p></div></div><div className="execution-item"><span><LockKeyhole size={18} /></span><div><b>Your keys stay here</b><p>Private keys never leave your browser or device.</p></div></div><div className="aside-market"><div className="aside-market-head"><span>MARKET SNAPSHOT</span><span className="service-live"><i /> LIVE</span></div>{prices.slice(0,3).map(coin => <div className="aside-market-row" key={coin.id}><img src={coin.image} alt="" /><b>{coin.symbol}</b><span>{money(coin.price, coin.price < 1 ? 4 : 2)}</span><small className={coin.change >= 0 ? 'positive' : 'negative'}>{coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}%</small></div>)}</div></aside></div>
 }
 
 function Alpha({ prices, state, onNavigate }: { prices: Market[]; state: string; onNavigate: (s: Section) => void }) {
@@ -236,7 +290,7 @@ function ServiceCard({ service }: { service: Service }) {
   return <article className="service-card card-surface"><div className="service-card-top"><span className="service-icon"><Command size={20} /></span><span className="service-category">{service.category ?? 'PDAO SERVICE'}</span></div><code>{service.id ?? 'agent.service'}</code><h3>{title}</h3><p>{service.summary ?? service.description ?? 'A live capability from the PDAO Agent Exchange.'}</p><div className="service-card-footer"><span>Published price <b>{price}</b></span><button aria-label={`View ${title}`}><ArrowUpRight size={17} /></button></div></article>
 }
 
-function Wallets({ onToast }: { onToast: (s: string) => void }) {
+function Wallets({ onToast, standardWallets, evmProviders, connectedWallets, onConnectSolana, onConnectEvm, onDisconnectExternal }: { onToast: (s: string) => void; standardWallets: readonly StandardWallet[]; evmProviders: EvmProviderOption[]; connectedWallets: ConnectedExternalWallet[]; onConnectSolana: (wallet: StandardWallet) => void; onConnectEvm: (provider: EvmProviderOption) => void; onDisconnectExternal: (id: string) => void }) {
   const [records, setRecords] = useState<WalletRecord[]>([])
   const [flow, setFlow] = useState<'create' | 'import' | 'unlock' | null>(null)
   const [selected, setSelected] = useState<WalletRecord | null>(null)
@@ -287,8 +341,33 @@ function Wallets({ onToast }: { onToast: (s: string) => void }) {
   }
 
   return <div className="wallets-layout"><section className="wallet-intro card-surface"><div className="wallet-emblem"><Mark size={50} /></div><span className="small-label">SELF CUSTODY, MADE CLEAR</span><h2>{records.length ? 'Your wallet is yours.' : 'Begin with your own keys.'}</h2><p>Create a new wallet on this device or restore one you already control. Your recovery phrase is encrypted locally with your passphrase and never sent to a server.</p><div className="wallet-buttons"><button className="button-primary" onClick={beginCreate}><Plus size={16} /> Create a new wallet</button><button className="button-secondary" onClick={beginImport}><Wallet size={16} /> Import recovery phrase</button></div>{records.length > 0 && <div className="wallet-records">{records.map(record => <article className="wallet-record" key={record.id}><div className="record-heading"><span className="record-chain"><Mark size={24} /></span><div><b>PrivateDAO wallet</b><small>Created {new Date(record.createdAt).toLocaleDateString()}</small></div><button className="record-unlock" onClick={() => { setSelected(record); setFlow('unlock') }}>Unlock wallet</button></div><div className="address-line"><span><i className="solana-dot" /> Solana</span><code>{record.solanaAddress.slice(0, 8)}…{record.solanaAddress.slice(-6)}</code><button onClick={() => void copyAddress(record.solanaAddress, 'solana')} aria-label="Copy Solana address">{copyState === 'solana' ? 'Copied' : 'Copy'}</button></div><div className="address-line"><span><i className="evm-dot" /> EVM</span><code>{record.evmAddress.slice(0, 8)}…{record.evmAddress.slice(-6)}</code><button onClick={() => void copyAddress(record.evmAddress, 'evm')} aria-label="Copy EVM address">{copyState === 'evm' ? 'Copied' : 'Copy'}</button></div><div className="record-actions"><span>{verifiedWalletId === record.id ? <><i className="status-light live" /> Wallet unlocked locally</> : 'Encrypted on this device'}</span><button onClick={() => { if (window.confirm('Remove this encrypted wallet from this device? Make sure you have your recovery phrase backed up first.')) { void import('./lib/walletVault').then(({ removeWallet }) => removeWallet(record.id)).then(() => { setRecords(items => items.filter(item => item.id !== record.id)); if (verifiedWalletId === record.id) setVerifiedWalletId(null) }) } }}>Remove</button></div></article>)}</div>}</section><aside className="wallet-security card-surface"><span className="small-label">SECURITY MODEL</span><div className="security-seal"><ShieldCheck size={31} /></div><h3>Built around your custody.</h3><ul><li><span><ShieldCheck size={16} /></span><span><b>Keys stay on your device</b><small>Recovery phrase is encrypted locally before saving.</small></span></li><li><span><Fingerprint size={16} /></span><span><b>Local confirmation</b><small>PrivatePAY is signed locally after its amount and recipient are shown.</small></span></li><li><span><LockKeyhole size={16} /></span><span><b>No cloud secret storage</b><small>Your unlock passphrase is never saved.</small></span></li></ul><div className="security-note">Keep your recovery phrase offline in a safe place. Anyone with it can control the wallet.</div></aside>
+    <WalletConnections standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={onConnectSolana} onConnectEvm={onConnectEvm} onDisconnect={onDisconnectExternal} />
     {flow && <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closeFlow() }}><section className="wallet-modal card-surface" role="dialog" aria-modal="true" aria-labelledby="wallet-modal-title"><div className="modal-heading"><div><span className="small-label">LOCAL WALLET VAULT</span><h2 id="wallet-modal-title">{flow === 'create' ? 'Create your wallet' : flow === 'import' ? 'Restore your wallet' : 'Unlock your wallet'}</h2></div><button className="icon-button" aria-label="Close" onClick={closeFlow}><X size={18} /></button></div>{flow === 'create' && <><p className="modal-copy">Write these words down and keep them offline. This is the only recovery key to your wallet.</p><div className="phrase-grid">{phrase.split(' ').map((word, index) => <div key={`${word}-${index}`}><small>{String(index + 1).padStart(2, '0')}</small><b>{word}</b></div>)}</div><button className="phrase-copy" onClick={() => void navigator.clipboard.writeText(phrase).then(() => onToast('Recovery phrase copied. Clear your clipboard after saving it offline.')).catch(() => setError('Clipboard access failed. Write the words down manually.'))}>Copy recovery phrase <ArrowUpRight size={14} /></button><label className="backup-confirm"><input type="checkbox" checked={backupConfirmed} onChange={event => setBackupConfirmed(event.target.checked)} /><span>I’ve written the recovery phrase down and stored it offline.</span></label></>}{flow === 'import' && <><label className="modal-field">Recovery phrase<textarea value={phrase} onChange={event => setPhrase(event.target.value)} placeholder="Enter your 12 or 24 recovery words" rows={3} autoComplete="off" spellCheck={false} /></label><p className={`phrase-validity ${phrase.trim() ? checkRecoveryPhrase(phrase) ? 'valid' : 'invalid' : ''}`}>{phrase.trim() ? checkRecoveryPhrase(phrase) ? 'Recovery phrase verified' : 'Check the words and their order' : 'Phrase is processed on this device only'}</p></>}{flow !== 'unlock' && <><label className="modal-field">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} minLength={12} autoComplete="new-password" placeholder="At least 12 characters" /></label><p className="passphrase-hint">This passphrase encrypts the wallet on this device. It cannot recover a lost recovery phrase.</p></>}{flow === 'unlock' && <label className="modal-field">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} autoComplete="current-password" placeholder="Your wallet passphrase" onKeyDown={event => { if (event.key === 'Enter') void unlock() }} /></label>}{error && <div className="form-error" role="alert">{error}</div>}<div className="modal-actions"><button className="button-secondary" onClick={closeFlow}>Cancel</button>{flow === 'unlock' ? <button className="button-primary" onClick={() => void unlock()} disabled={!passphrase || busy}>{busy ? 'Unlocking…' : 'Unlock wallet'}</button> : <button className="button-primary" onClick={() => void submitWallet()} disabled={busy || passphrase.length < 12 || (flow === 'create' && !backupConfirmed) || (flow === 'import' && !checkRecoveryPhrase(phrase))}>{busy ? 'Encrypting…' : flow === 'create' ? 'Encrypt & save wallet' : 'Restore & encrypt'}</button>}</div></section></div>}
   </div>
+}
+
+const suggestedWallets = [
+  { name: 'Phantom', chain: 'Solana', href: 'https://phantom.com/download' },
+  { name: 'Solflare', chain: 'Solana', href: 'https://solflare.com/download' },
+  { name: 'Backpack', chain: 'Solana', href: 'https://backpack.app/download' },
+  { name: 'MetaMask', chain: 'EVM', href: 'https://metamask.io/download/' },
+  { name: 'Rabby', chain: 'EVM', href: 'https://rabby.io/' },
+  { name: 'Coinbase Wallet', chain: 'Multi-chain', href: 'https://www.coinbase.com/wallet/downloads' },
+]
+
+function WalletConnections({ standardWallets, evmProviders, connectedWallets, onConnectSolana, onConnectEvm, onDisconnect }: { standardWallets: readonly StandardWallet[]; evmProviders: EvmProviderOption[]; connectedWallets: ConnectedExternalWallet[]; onConnectSolana: (wallet: StandardWallet) => void; onConnectEvm: (provider: EvmProviderOption) => void; onDisconnect: (id: string) => void }) {
+  const compatibleSolana = standardWallets.filter(wallet => wallet.chains.some(chain => chain.startsWith('solana:')) && Boolean(wallet.features['standard:connect']))
+  const detectedNames = new Set([...compatibleSolana.map(wallet => wallet.name.toLowerCase()), ...evmProviders.map(provider => provider.info.name.toLowerCase())])
+  return <section className="wallet-connect-hub card-surface">
+    <div className="wallet-hub-heading"><div><span className="small-label">YOUR CONNECTED WALLETS</span><h3>Bring the wallet you already use.</h3><p>We discover compatible wallets automatically. Your wallet approves every signature; no recovery phrase or vault passphrase is requested.</p></div><span className="wallet-hub-seal"><Fingerprint size={22} /><small>KEYS STAY<br />WITH YOU</small></span></div>
+    {connectedWallets.length > 0 && <div className="external-wallet-grid">{connectedWallets.map(item => <article className="external-wallet-card" key={item.id}><div className="external-wallet-brand">{item.icon ? <img src={item.icon} alt="" /> : <Wallet size={22} />}<span><b>{item.name}</b><small>{item.chain === 'solana' ? 'Solana · connected' : `EVM · ${item.chainId}`}</small></span><i className="external-connected-dot" /></div><code>{item.address.slice(0, 10)}…{item.address.slice(-8)}</code><button className="wallet-disconnect" onClick={() => onDisconnect(item.id)}>Disconnect from this app</button></article>)}</div>}
+    <div className="wallet-provider-columns">
+      <div className="wallet-provider-group"><div className="wallet-provider-title"><span className="wallet-chain-icon solana-chain">S</span><div><b>Solana wallets</b><small>Wallet Standard discovery</small></div><span className="provider-count">{compatibleSolana.length} found</span></div>{compatibleSolana.length ? compatibleSolana.map(wallet => { const connected = connectedWallets.some(item => item.chain === 'solana' && item.name === wallet.name); return <button className="wallet-provider-option" key={wallet.name} onClick={() => onConnectSolana(wallet)} disabled={connected}><img src={wallet.icon} alt="" /><span><b>{wallet.name}</b><small>{connected ? 'Connected to this app' : 'Detected in this browser'}</small></span><span className={connected ? 'provider-state connected' : 'provider-state'}>{connected ? 'Connected' : 'Connect'}</span></button> }) : <div className="wallet-provider-empty"><span>No compatible Solana wallet was detected in this browser.</span><small>Install a wallet that supports Wallet Standard, then return here to connect.</small></div>}</div>
+      <div className="wallet-provider-group"><div className="wallet-provider-title"><span className="wallet-chain-icon evm-chain">Ξ</span><div><b>EVM wallets</b><small>EIP‑6963 provider discovery</small></div><span className="provider-count">{evmProviders.length} found</span></div>{evmProviders.length ? evmProviders.map(option => { const connected = connectedWallets.some(item => item.chain === 'evm' && item.id.includes(option.info.uuid)); return <button className="wallet-provider-option" key={option.info.uuid} onClick={() => onConnectEvm(option)} disabled={connected}><img src={option.info.icon} alt="" /><span><b>{option.info.name}</b><small>{connected ? 'Connected to this app' : 'Detected in this browser'}</small></span><span className={connected ? 'provider-state connected' : 'provider-state'}>{connected ? 'Connected' : 'Connect'}</span></button> }) : <div className="wallet-provider-empty"><span>No EVM wallet provider was detected in this browser.</span><small>Multiple providers are discovered separately when they support EIP‑6963.</small></div>}</div>
+    </div>
+    <div className="wallet-install-row"><div><b>Looking for another wallet?</b><small>These options were not detected here. Install one and return; the app checks again automatically when it opens.</small></div><div className="wallet-install-options">{suggestedWallets.filter(item => !detectedNames.has(item.name.toLowerCase())).map(item => <a key={item.name} href={item.href} target="_blank" rel="noreferrer"><span>{item.name}</span><small>{item.chain} · not detected</small><ArrowUpRight size={14} /></a>)}</div></div>
+    <div className="wallet-standard-foot"><ShieldCheck size={16} /><span>Wallet providers control the approval screen and signing. “Not detected” means this browser did not announce that provider; it does not mean the wallet is unavailable on your device.</span></div>
+  </section>
 }
 
 type BotTab = 'Policy' | 'Vault' | 'Team Bots' | 'DApp Browser'
@@ -400,7 +479,7 @@ function BotsWorkspace({ prices, services, onToast, onNavigate }: { prices: Mark
   </section>
 }
 
-function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; setAmount: (s: string) => void; onToast: (s: string) => void; onNavigate: (section: Section) => void }) {
+function Payments({ amount, setAmount, onToast, onNavigate, connectedWallets }: { amount: string; setAmount: (s: string) => void; onToast: (s: string) => void; onNavigate: (section: Section) => void; connectedWallets: ConnectedExternalWallet[] }) {
   const [resource, setResource] = useState('https://agents.privatedao.org/services/privatepay-x402')
   const [provider, setProvider] = useState('privatedao-agent-exchange')
   const [wallets, setWallets] = useState<WalletRecord[]>([])
@@ -420,10 +499,16 @@ function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; 
     void import('./lib/walletVault').then(({ listWallets }) => listWallets()).then(records => {
       if (!active) return
       setWallets(records)
-      setPayerId(current => current || records[0]?.id || '')
+      setPayerId(current => current || (records[0] ? `local:${records[0].id}` : ''))
     }).catch(() => { if (active) setError('Local wallet storage is unavailable in this browser.') })
     return () => { active = false }
   }, [])
+  useEffect(() => {
+    if (!payerId && connectedWallets.some(wallet => wallet.chain === 'solana')) {
+      const first = connectedWallets.find(wallet => wallet.chain === 'solana')!
+      setPayerId(`external:${first.id}`)
+    }
+  }, [connectedWallets, payerId])
   useEffect(() => {
     let active = true
     void fetch('https://agents.privatedao.org/api/privatepay/status', { headers: { accept: 'application/json' } })
@@ -432,7 +517,10 @@ function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; 
       .catch(() => { if (active) setRailState('unavailable') })
     return () => { active = false }
   }, [])
-  const payer = wallets.find(wallet => wallet.id === payerId)
+  const localPayer = wallets.find(wallet => `local:${wallet.id}` === payerId)
+  const externalPayer = connectedWallets.find((wallet): wallet is Extract<ConnectedExternalWallet, { chain: 'solana' }> => wallet.chain === 'solana' && `external:${wallet.id}` === payerId)
+  const payerAddress = localPayer?.solanaAddress ?? externalPayer?.address
+  const payerLabel = localPayer ? 'Local wallet' : externalPayer?.name
   const resetForEdit = (action: () => void) => { action(); clearPayment() }
   const postPrivatePay = async <T,>(path: 'requirements' | 'prepare' | 'verify' | 'settle', body: Record<string, unknown>): Promise<T> => {
     const response = await fetch(`https://agents.privatedao.org/api/privatepay/x402/${path}`, {
@@ -458,15 +546,15 @@ function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; 
   const requestQuote = async () => {
     clearPayment()
     const match = amount.trim().match(/^(\d+)(?:\.(\d{1,6}))?$/)
-    if (!match || !/^https:\/\//i.test(resource.trim()) || !provider.trim() || !payer) {
-      setError(!payer ? 'Create or import a local wallet first so the quote is bound to its payer address.' : 'Enter a positive USDC amount, an HTTPS resource and a provider ID.')
+    if (!match || !/^https:\/\//i.test(resource.trim()) || !provider.trim() || !payerAddress) {
+      setError(!payerAddress ? 'Connect a Solana wallet or select a local wallet so the quote is bound to its payer address.' : 'Enter a positive USDC amount, an HTTPS resource and a provider ID.')
       return
     }
     const baseUnits = `${match[1]}${(match[2] ?? '').padEnd(6, '0')}`.replace(/^0+(?=\d)/, '')
     if (baseUnits === '0') { setError('Enter an amount greater than zero.'); return }
     setBusy(true)
     try {
-      const result = await postPrivatePay<PrivatePayQuote>('requirements', { resource: resource.trim(), provider_id: provider.trim(), amount_base_units: baseUnits, payer: payer.solanaAddress, require_pdao_wallet: false })
+      const result = await postPrivatePay<PrivatePayQuote>('requirements', { resource: resource.trim(), provider_id: provider.trim(), amount_base_units: baseUnits, payer: payerAddress, require_pdao_wallet: false })
       if (!result.requirements?.accepts?.length) throw new Error('The payment provider returned no usable payment requirements.')
       setQuote(result)
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not request a live quote.') }
@@ -475,11 +563,11 @@ function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; 
   const accept = quote?.requirements?.accepts?.[0]
   const exactAmount = accept?.amount && /^\d+$/.test(accept.amount) ? `${(BigInt(accept.amount) / 1_000_000n).toString()}.${(BigInt(accept.amount) % 1_000_000n).toString().padStart(6, '0')} USDC` : null
   const preparePayment = async () => {
-    if (!payer || !quote?.request_id || !accept?.payTo || !accept.amount || !ensureQuoteFresh()) return
+    if (!payerAddress || !quote?.request_id || !accept?.payTo || !accept.amount || !ensureQuoteFresh()) return
     setBusy(true); setError('')
     try {
       const result = await postPrivatePay<PrivatePayPreparedResponse>('prepare', {
-        phase: 'transfer', request_id: quote.request_id, payer: payer.solanaAddress,
+        phase: 'transfer', request_id: quote.request_id, payer: payerAddress,
         owner: accept.payTo, amount_base_units: accept.amount,
       })
       if (!result.transaction_base64 || !result.version || !result.required_signers) throw new Error('The provider returned an incomplete signing request.')
@@ -488,15 +576,18 @@ function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; 
     finally { setBusy(false) }
   }
   const signAndVerify = async () => {
-    if (!payer || !quote?.requirements || !accept || !prepared || !passphrase || !ensureQuoteFresh()) return
+    if (!payerAddress || !quote?.requirements || !accept || !prepared || (localPayer && !passphrase) || !ensureQuoteFresh()) return
     setBusy(true); setError(''); setVerification(null); setPaymentPayload(null)
     try {
-      const { signPreparedSolanaTransaction } = await import('./lib/walletVault')
-      const transactionBase64 = await signPreparedSolanaTransaction(payer, passphrase, {
+      const signingRequest = {
         transactionBase64: prepared.transaction_base64!,
         version: prepared.version!,
         requiredSigners: prepared.required_signers!,
-      } satisfies PreparedSolanaTransaction, payer.solanaAddress)
+      } satisfies PreparedSolanaTransaction
+      const transactionBase64 = localPayer
+        ? await (async () => { const { signPreparedSolanaTransaction } = await import('./lib/walletVault'); return signPreparedSolanaTransaction(localPayer, passphrase, signingRequest, payerAddress) })()
+        : externalPayer ? await signWithExternalSolanaWallet(externalPayer, signingRequest)
+        : (() => { throw new Error('Select a connected Solana wallet to sign this payment.') })()
       const payload: Record<string, unknown> = {
         x402Version: 2,
         resource: quote.requirements.resource,
@@ -543,11 +634,11 @@ function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; 
     </section>
     <section className="payment-form card-surface">
       <div className="payment-form-head"><span className="small-label">PRIVATEPAY CHECKOUT</span><span className="form-lock"><LockKeyhole size={14} /> {railState === 'live' ? 'CONNECTED' : 'PROVIDER STATUS'}</span></div>
-      {payer ? <label>Paying wallet<select value={payerId} onChange={event => resetForEdit(() => setPayerId(event.target.value))}>{wallets.map(wallet => <option key={wallet.id} value={wallet.id}>{wallet.solanaAddress.slice(0, 8)}…{wallet.solanaAddress.slice(-6)}</option>)}</select><small className="payer-address">{payer.solanaAddress}</small></label> : <div className="wallet-needed"><span>No local wallet is linked yet.</span><button className="text-action" onClick={() => onNavigate('wallet')}>Create or import wallet <ArrowUpRight size={14} /></button></div>}
+      {payerAddress ? <label>Paying wallet<select value={payerId} onChange={event => resetForEdit(() => setPayerId(event.target.value))}>{wallets.map(wallet => <option key={`local:${wallet.id}`} value={`local:${wallet.id}`}>PrivateDAO · {wallet.solanaAddress.slice(0, 8)}…{wallet.solanaAddress.slice(-6)}</option>)}{connectedWallets.filter((wallet): wallet is Extract<ConnectedExternalWallet, { chain: 'solana' }> => wallet.chain === 'solana').map(wallet => <option key={`external:${wallet.id}`} value={`external:${wallet.id}`}>{wallet.name} · {wallet.address.slice(0, 8)}…{wallet.address.slice(-6)}</option>)}</select><small className="payer-address">{payerAddress} · {payerLabel}</small></label> : <div className="wallet-needed"><span>No Solana wallet is connected yet.</span><button className="text-action" onClick={() => onNavigate('wallet')}>Connect any detected wallet <ArrowUpRight size={14} /></button></div>}
       <label>Recipient resource<input value={resource} onChange={event => resetForEdit(() => setResource(event.target.value))} /></label>
       <label>Provider ID<input value={provider} onChange={event => resetForEdit(() => setProvider(event.target.value))} /></label>
       <label>Requested amount (USDC)<div className="amount-field"><input type="number" min="0" step="0.000001" value={amount} onChange={event => resetForEdit(() => setAmount(event.target.value))} /><span>USDC</span></div></label>
-      <button className="button-primary payment-quote" onClick={() => void requestQuote()} disabled={busy || !payer}>{busy ? 'Requesting…' : <><ArrowRight size={16} /> Request exact quote</>}</button>
+      <button className="button-primary payment-quote" onClick={() => void requestQuote()} disabled={busy || !payerAddress}>{busy ? 'Requesting…' : <><ArrowRight size={16} /> Request exact quote</>}</button>
       {error && <div className="form-error" role="alert">{error}</div>}
       {quote && accept && <div className="quote-result" role="status">
         <div className="quote-result-heading"><i className="status-light live" /> Exact payment quote <span>{accept.scheme ?? 'x402'}</span></div>
@@ -558,13 +649,13 @@ function Payments({ amount, setAmount, onToast, onNavigate }: { amount: string; 
         {!prepared && !verification && !settlement && <button className="button-secondary payment-step-button" onClick={() => void preparePayment()} disabled={busy || railState !== 'live'}>{busy ? 'Preparing transaction…' : 'Prepare private transfer'}</button>}
         {prepared && !verification && !settlement && <div className="payment-step">
           <div className="quote-detail-grid"><div><small>TRANSACTION</small><b>{prepared.version} · {prepared.send_to}</b></div><div><small>BLOCKHASH VALID THROUGH</small><b>{prepared.last_valid_block_height ?? '—'}</b></div><div><small>REQUIRED SIGNERS</small><code>{prepared.required_signers?.join(', ') ?? '—'}</code></div><div><small>INSTRUCTIONS</small><b>{prepared.instruction_count ?? 'Provider-built'}</b></div></div>
-          <label className="payment-passphrase">Unlock passphrase<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} autoComplete="current-password" placeholder="Unlock locally to sign" onKeyDown={event => { if (event.key === 'Enter') void signAndVerify() }} /></label>
-          <p className="payment-step-note">Signing happens locally. The unchanged quote and signed transaction go to the facilitator for verification.</p>
-          <button className="button-primary payment-step-button" onClick={() => void signAndVerify()} disabled={busy || !passphrase}>{busy ? 'Signing and verifying…' : 'Sign locally & verify'}</button>
+          {localPayer ? <label className="payment-passphrase">Unlock local wallet<input type="password" value={passphrase} onChange={event => setPassphrase(event.target.value)} autoComplete="current-password" placeholder="Unlock this local vault" onKeyDown={event => { if (event.key === 'Enter') void signAndVerify() }} /></label> : <div className="payment-wallet-approval"><ShieldCheck size={17} /><span><b>{externalPayer?.name} will request approval</b><small>Review and sign in the wallet’s own approval window. No vault passphrase or recovery phrase is needed.</small></span></div>}
+          <p className="payment-step-note">The transaction is checked against the exact prepared message. The signed transaction is sent for facilitator verification.</p>
+          <button className="button-primary payment-step-button" onClick={() => void signAndVerify()} disabled={busy || Boolean(localPayer && !passphrase)}>{busy ? 'Signing and verifying…' : localPayer ? 'Sign locally & verify' : 'Approve in wallet & verify'}</button>
         </div>}
         {verification?.isValid === true && paymentPayload && !settlement && <div className="payment-step verified-step"><div><i className="status-light live" /> Facilitator verification passed</div><p>Confirm this exact payment to request settlement.</p><div className="quote-detail-grid"><div><small>AMOUNT</small><b>{exactAmount}</b></div><div><small>NETWORK</small><b>{accept.network}</b></div><div className="quote-recipient"><small>RECIPIENT</small><code>{accept.payTo}</code></div></div><button className="button-primary payment-step-button" onClick={() => void settlePayment()} disabled={busy}>{busy ? 'Settling payment…' : 'Confirm payment & settle'}</button></div>}
         {settlement?.pending === true && !settlement.success && <div className="payment-step settlement-step"><div><i className="status-light" /> Settlement is still being confirmed</div><p>The provider returned a pending or temporarily unavailable status. This payment will not be submitted automatically again.</p>{settlement.transaction && <div className="quote-reference"><span>Transaction</span><code>{settlement.transaction}</code></div>}<button className="button-secondary payment-step-button" onClick={() => void settlePayment()} disabled={busy}>{busy ? 'Checking provider…' : 'Check settlement status'}</button></div>}
-        {settlement?.success === true && <div className="payment-step settlement-step"><div><i className="status-light live" /> Payment settled</div><p>Settlement confirmed by the provider.</p><div className="quote-detail-grid"><div><small>NETWORK</small><b>{settlement.network ?? accept.network ?? '—'}</b></div><div><small>PAYER</small><code>{settlement.payer ?? payer?.solanaAddress ?? '—'}</code></div><div className="quote-recipient"><small>SETTLEMENT SIGNATURE</small><code>{settlement.transaction ?? 'Provider receipt attached'}</code></div></div><details><summary>View provider receipt</summary><pre>{JSON.stringify(settlement, null, 2)}</pre></details></div>}
+        {settlement?.success === true && <div className="payment-step settlement-step"><div><i className="status-light live" /> Payment settled</div><p>Settlement confirmed by the provider.</p><div className="quote-detail-grid"><div><small>NETWORK</small><b>{settlement.network ?? accept.network ?? '—'}</b></div><div><small>PAYER</small><code>{settlement.payer ?? payerAddress ?? '—'}</code></div><div className="quote-recipient"><small>SETTLEMENT SIGNATURE</small><code>{settlement.transaction ?? 'Provider receipt attached'}</code></div></div><details><summary>View provider receipt</summary><pre>{JSON.stringify(settlement, null, 2)}</pre></details></div>}
         {prepared && <p className="payment-boundary-note">{prepared.privacy_boundary ?? 'Base-layer entry and exit may be visible. Private settlement is limited to the configured MagicBlock rail.'}</p>}
         <details><summary>View complete provider quote</summary><pre>{JSON.stringify(quote, null, 2)}</pre></details>
       </div>}
