@@ -12,7 +12,7 @@ import { readPortfolioBalances, readSolanaTokenBalances, type PortfolioBalance, 
 import { connectEvmWallet, connectSolanaWallet, discoverEvmWallets, discoverSolanaWallets, disconnectSolanaWallet, getExistingEvmAccount, onSolanaWalletsChanged, signWithExternalSolanaWallet, type ConnectedExternalWallet, type EvmProviderOption, type EvmWalletDiscovery } from './lib/externalWallets'
 import {
   Activity, ArrowDownLeft, ArrowLeftRight, ArrowRight, ArrowUpRight,
-  Bell, Bot, ChevronDown, CircleHelp, Command, Compass, ExternalLink,
+  Bot, ChevronDown, CircleHelp, Command, Compass, ExternalLink,
   Eye, EyeOff, Fingerprint, LayoutDashboard, LockKeyhole, Menu,
   MessageCircle, PanelLeftClose, Plus, RefreshCw, Search, ShieldCheck,
   Sparkles, Star, Trash2, Wallet, X,
@@ -269,6 +269,19 @@ function App() {
   }, [])
   useEffect(() => { window.location.hash = section }, [section])
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(''), 3200); return () => window.clearTimeout(timer) }, [toast])
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      const target = event.target
+      const editing = target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+      if (event.key === 'Escape') { setMenuOpen(false); return }
+      if (!editing && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setMenuOpen(open => !open)
+      }
+    }
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [])
 
   const filteredServices = useMemo(() => services.filter(service => {
     const name = `${service.name ?? service.title ?? ''} ${service.id ?? ''} ${service.description ?? ''}`.toLowerCase()
@@ -309,7 +322,7 @@ function App() {
       <header className="topbar">
         <button className="icon-button mobile-menu" aria-label="Open navigation" onClick={() => setMobileNav(true)}><Menu size={20} /></button>
         <div className="breadcrumb"><span>Workspace</span><span className="crumb-slash">/</span><b>{navItems.find(item => item.id === section)?.label}</b></div>
-        <div className="topbar-actions"><button className="network-pill"><i /> MAINNET</button><button className="icon-button notification-button" aria-label="Notifications" onClick={() => setToast('You’re all caught up.')}><Bell size={18} /><i /></button><button className="account-button" onClick={() => {
+        <div className="topbar-actions"><button className="network-pill"><i /> MAINNET</button><button className="account-button" onClick={() => {
           if (isAuthenticated) void logout({ logoutParams: { returnTo: nativeAuth ? nativeRedirectUri : `${window.location.origin}${import.meta.env.BASE_URL}` }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })
           else if (authEnabled) void loginWithRedirect({ appState: { returnTo: window.location.pathname + window.location.hash }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })
           else { changeSection('wallet'); setToast('Connect any available wallet directly. An account sign-in is not required.') }
@@ -332,9 +345,9 @@ function App() {
       </div>
     </main>
     <nav className="mobile-tabs" aria-label="Quick navigation">{(['overview','markets','trade','wallet'] as Section[]).map(id => { const item = navItems.find(nav => nav.id === id)!; return <button key={id} className={section === id ? 'selected' : ''} onClick={() => changeSection(id)}><item.icon size={19} /><span>{item.label}</span></button> })}</nav>
-    {menuOpen && <div className="floating-menu"><button onClick={() => { setMenuOpen(false); setToast('Shortcuts are ready.') }}>Keyboard shortcuts</button></div>}
+    {menuOpen && <nav className="floating-menu" aria-label="Quick navigation"><div className="floating-menu-heading"><b>Go to</b><kbd>ESC</kbd></div>{navItems.map(item => <button key={item.id} onClick={() => { changeSection(item.id); setMenuOpen(false) }}><item.icon size={15} /><span>{item.label}</span></button>)}</nav>}
     {toast && <div className="toast" role="status"><span className="toast-mark"><Mark size={20} /></span>{toast}<button aria-label="Dismiss" onClick={() => setToast('')}><X size={15} /></button></div>}
-    <button className="shortcut-trigger" aria-label="Keyboard shortcuts" onClick={() => setMenuOpen(!menuOpen)}><Command size={15} /></button>
+    <button className="shortcut-trigger" aria-label="Open quick navigation" aria-expanded={menuOpen} title="Quick navigation · Ctrl/⌘ K" onClick={() => setMenuOpen(open => !open)}><Command size={15} /></button>
     {featured && <span className="sr-only">Solana {money(featured.price)} {featured.change.toFixed(2)} percent 24 hour change</span>}
   </div>
 }

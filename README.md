@@ -17,6 +17,7 @@ A new, independent PrivateDAO wallet experience for the web, Chrome side panel, 
 - Agent Exchange catalog prices are read from the live provider. Trading/AI subscriptions, usage commissions, automatic PDAO conversion, and treasury settlement are not enabled until their provider quotes, conversion route, and treasury contract are confirmed.
 - The Chrome extension is a Manifest V3 side panel. Android uses Capacitor and keeps its web bundle local.
 - The workspace navigation can be compacted on desktop and remembers the choice. Help links to the active source issue tracker.
+- Quick navigation opens from the command key or Ctrl/⌘+K. Removed the notification control while there is no notification feed to populate it.
 
 ## Development
 
