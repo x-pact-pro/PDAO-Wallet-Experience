@@ -15,6 +15,15 @@ passed after this change. The rebuilt APK was installed and launched on
 device `R58T33JGLHN` (package `org.privatedao.wallet`, target SDK 35); after a
 cleared crash buffer, no new Android crash was reported.
 
+The r27 handoff artifacts are in
+`/home/x-pact/Desktop/PDAO-Wallet-Deliverables/r27-0.1.1/`:
+
+| Artifact | SHA-256 | State |
+|---|---|---|
+| `PDAO-Wallet-Android-debug-0.1.1-r27.apk` | `b74677a40f52178f645e524c9244957601fe9cfb3c93fa3e77b3e49de28665c7` | Device-tested debug build |
+| `PDAO-Wallet-Android-release-unsigned-0.1.1-r27.apk` | `5cf24704dc74c821d4552e9d944f0deb325fe99b352876bbecc4f12095b3ae51` | Target SDK 35, unsigned for F-Droid signing |
+| `PDAO-Wallet-Chrome-0.1.1-r27.zip` | `851d1d3583707d97afb6de50d04570f5fd5fca0bf4906aa55812a5125e83e33e` | MV3 extension package, build passed |
+
 ## r26 — current F-Droid source recipe and distribution artifacts
 
 The F-Droid recipe now pins the current source commit rather than the earlier
