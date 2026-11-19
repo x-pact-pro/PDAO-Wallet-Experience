@@ -9,7 +9,8 @@
     "build:extension": "tsc -b && vite build --config vite.config.extension.ts",
     "lint": "oxlint",
     "preview": "vite preview",
-    "android:sync": "npm run build && cap sync android",
+    "android:sync": "npm run build && cap sync android && npm run android:vendor",
+    "android:vendor": "node scripts/vendor-capacitor-android.mjs",
     "android:open": "cap open android"
   },
   "dependencies": {

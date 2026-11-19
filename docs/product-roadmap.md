@@ -43,7 +43,7 @@
 ## Phase 6 — Distribution
 - [x] Chrome MV3 build and reproducible ZIP artifact. Browser installation review remains open.
 - [x] Capacitor Android app shell, Android MWA registration, SDK debug build, and APK checksum.
-- [x] F-Droid metadata draft and successful offline unsigned release build.
+- [ ] F-Droid metadata draft and source-vendored Gradle recipe; verify build from clean clone and F-Droid tooling before claiming reproducibility.
 - [ ] F-Droid main-repository eligibility/maintainer review, app icon and screenshots, plus emulator/device check.
 - [x] Public GitHub source repository.
 - [x] AWS Amplify deployment in `us-east-1` on a new app ID; GitHub Pages remains a secondary preview and the existing wallet domain is untouched.

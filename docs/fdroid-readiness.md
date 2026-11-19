@@ -2,21 +2,18 @@
 
 ## Source build path
 
-The Android project uses Capacitor. `npx cap sync android` copies the built
-web runtime and plugin metadata into `android/app/src/main/assets` and creates
-the `android/capacitor-cordova-android-plugins` Gradle project. Those files are
-now tracked so the Android wrapper can be built from the public Git source
-without running npm or fetching packages during the F-Droid Gradle build.
-Application TypeScript/React source remains in `src/`; regenerate and review
-the synchronized assets with `npm run build && npx cap sync android` for each
-release.
+The Android project uses Capacitor. `npm run android:sync` builds the web
+runtime, runs `npx cap sync android`, and vendors the required Capacitor Android
+project sources from npm into `android/capacitor-*`. The synchronized runtime,
+plugin metadata, Cordova bridge project, and four Gradle module sources are
+tracked in Git. The F-Droid Gradle step can therefore resolve local Capacitor
+projects without `node_modules` or npm access.
 
 The root `.fdroid.yml` describes version `0.1.0` (`versionCode: 1`) and uses
-`android/` with Gradle's release task. Its build commit is the full source SHA
-`5951f71115b422d38aea94c72387f597207fd66d`. The unsigned release APK was built offline with `assembleRelease`;
-the APK includes the app ID, SDK 24 minimum, target SDK 35, and the synchronized
-web runtime. This verifies a local offline source build, not a clean F-Droid
-build-server run.
+`android/` with Gradle's release task. Its build commit is a full source SHA.
+The unsigned release APK built locally with `assembleRelease` includes the app
+ID, SDK 24 minimum, target SDK 35, and the synchronized web runtime. A clean
+clone build must pass before claiming source-build reproducibility.
 
 ## Current release state
 
@@ -34,6 +31,10 @@ build-server run.
   require a separately managed release signing key and update continuity.
 - The metadata declares `NonFreeNet` because some wallet features rely on
   hosted external services and APIs.
+- A clean-clone build exposed that Gradle settings pointed into ignored
+  `node_modules` projects. The source-vendoring script and recipe are being
+  corrected; the previous successful local build did not prove clean-source
+  reproducibility.
 
 ## References
 
