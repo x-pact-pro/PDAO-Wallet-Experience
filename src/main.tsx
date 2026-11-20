@@ -71,6 +71,10 @@ createRoot(document.getElementById('root')!).render(
       clientId={nativeRuntime ? auth0.nativeClientId : auth0.clientId}
       cacheLocation="memory"
       useRefreshTokens={nativeRuntime}
+      // Native callbacks are consumed exactly once by NativeAuthRedirectHandler.
+      // Prevent the provider from attempting a second callback transaction when
+      // the Capacitor app is resumed after Google/email authentication.
+      skipRedirectCallback={nativeRuntime}
       authorizationParams={{ redirect_uri: callbackUri, scope: 'openid profile email' }}
       onRedirectCallback={appState => {
         window.history.replaceState({}, document.title, appState?.returnTo ?? (import.meta.env.BASE_URL === './' ? '/' : import.meta.env.BASE_URL))
