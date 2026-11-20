@@ -23,4 +23,18 @@ for (const label of ['Continue with Google', 'Continue with email', 'Create a wa
   if (!source.includes(label)) throw new Error(`Missing onboarding choice: ${label}`)
 }
 
+const welcomeWiring = source.match(/if \(welcome\) return <Welcome[\s\S]*?\/>/)?.[0] ?? ''
+if (!welcomeWiring.includes("onGoogle={() => startHumanSignIn('google-oauth2')}")) {
+  throw new Error('Google onboarding must use the guarded Auth0 sign-in helper')
+}
+if (!welcomeWiring.includes("onEmail={() => startHumanSignIn('email')}")) {
+  throw new Error('Email onboarding must use the guarded Auth0 sign-in helper')
+}
+for (const localEntry of ['onCreateWallet={() => enter(\'wallet\')}', 'onRestoreWallet={() => enter(\'wallet\')}', 'onConnectWeb3={() => enter(\'wallet\')}']) {
+  if (!welcomeWiring.includes(localEntry)) throw new Error(`Wallet onboarding must not require Auth0: ${localEntry}`)
+}
+if (/on(?:CreateWallet|RestoreWallet|ConnectWeb3)=\{\(\) => startHumanSignIn/.test(welcomeWiring)) {
+  throw new Error('Wallet onboarding must never trigger human sign-in')
+}
+
 console.log('onboarding boundary checks passed')
