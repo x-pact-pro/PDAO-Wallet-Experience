@@ -110,14 +110,6 @@ function App() {
     let unsubscribe: (() => void) | undefined
     const refresh = (wallets: readonly StandardWallet[]) => {
       setStandardWallets(wallets)
-      void Promise.all(wallets.map(wallet => connectSolanaWallet(wallet, true).catch(() => null))).then(accounts => {
-        if (!active) return
-        setConnectedWallets(current => {
-          const next: ConnectedExternalWallet[] = [...current.filter(item => item.chain !== 'solana')]
-          accounts.forEach(account => { if (account && !next.some(item => item.id === account.id)) next.push(account) })
-          return next
-        })
-      })
     }
     const initialize = async () => {
       if (Capacitor.getPlatform() === 'android') {
@@ -233,15 +225,8 @@ function App() {
   const rescanWalletProviders = () => {
     const wallets = discoverSolanaWallets()
     setStandardWallets(wallets)
-    void Promise.all(wallets.map(wallet => connectSolanaWallet(wallet, true).catch(() => null))).then(accounts => {
-      setConnectedWallets(current => {
-        const next: ConnectedExternalWallet[] = [...current.filter(item => item.chain !== 'solana')]
-        accounts.forEach(account => { if (account && !next.some(item => item.id === account.id)) next.push(account) })
-        return next
-      })
-    })
     evmDiscovery.current?.refresh()
-    setToast('Scanning for compatible wallet providers…')
+    setToast(`${wallets.length} Solana wallet provider${wallets.length === 1 ? '' : 's'} found. Choose Connect to approve one.`)
   }
 
   const refreshPrices = async () => {
@@ -301,10 +286,20 @@ function App() {
   const featured = prices.find(coin => coin.id === 'solana')
   const currentMeta = sectionMeta[section]
 
-  const enter = () => { sessionStorage.setItem('pdao-entered', '1'); setWelcome(false) }
+  const enter = (destination: Section = 'overview') => { sessionStorage.setItem('pdao-entered', '1'); setSection(destination); setWelcome(false) }
+  const startHumanSignIn = (connection?: string) => {
+    if (authEnvironmentMismatch) { setToast('Secure sign-in is not configured for this release environment.'); return }
+    if (!authEnabled) { setToast('Sign-in is unavailable in this release. You can continue with a wallet directly.'); return }
+    sessionStorage.setItem('pdao-entered', '1')
+    void loginWithRedirect({
+      ...(connection ? { authorizationParams: { connection } } : {}),
+      appState: { returnTo: window.location.pathname + window.location.hash },
+      ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}),
+    })
+  }
   const changeSection = (id: Section) => { setSection(id); setMobileNav(false) }
 
-  if (welcome) return <Welcome onEnter={enter} />
+  if (welcome) return <Welcome onEnter={() => enter()} onGoogle={() => startHumanSignIn('google-oauth2')} onEmail={() => startHumanSignIn('email')} onCreateWallet={() => enter('wallet')} onRestoreWallet={() => enter('wallet')} onConnectWeb3={() => enter('wallet')} />
 
   const toggleSidebar = () => setSidebarCollapsed(current => {
     const next = !current
@@ -396,8 +391,8 @@ function Identity({ authenticated, onDockLogin }: { authenticated: boolean; onDo
   </div>
 }
 
-function Welcome({ onEnter }: { onEnter: () => void }) {
-  return <main className="welcome-screen"><div className="welcome-grain" /><header className="welcome-top"><div className="welcome-brand"><Mark size={42} /><span><b>PrivateDAO</b><small>WALLET</small></span></div><div className="welcome-status"><i /> PRIVATE BY DESIGN</div></header><section className="welcome-content"><div className="welcome-copy"><div className="eyebrow welcome-eyebrow"><span className="eyebrow-dot" />A MORE CONSIDERED FINANCIAL WORLD</div><h1>A quieter way<br />to <em>hold value.</em></h1><p>Your assets and decisions, gathered in a private space made for clarity. Enter when you’re ready.</p><button className="welcome-cta" onClick={onEnter}>Enter your wallet <ArrowRight size={18} /></button><div className="welcome-assurance"><ShieldCheck size={16} /><span>Self-custody, at the center</span><span className="assurance-sep">·</span><span>Your keys stay yours</span></div></div><div className="welcome-art" aria-hidden="true"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="orbit orbit-three" /><div className="art-glow" /><div className="welcome-plaque"><Mark size={82} /><span>PrivateDAO</span><small>Your world, in your hands.</small><div className="plaque-rule" /><div className="plaque-foot"><span>SELF CUSTODY</span><span>EST. ON CHAIN</span></div></div><div className="floating-stat stat-one"><span>ASSETS</span><b>Held by you</b><ShieldCheck size={17} /></div><div className="floating-stat stat-two"><span>DESIGNED FOR</span><b>Clarity <Sparkles size={14} /></b></div></div></section><div className="welcome-bottom"><span>PORTFOLIO <i /> MARKETS <i /> PRIVATEPAY <i /> INTELLIGENCE</span><span>SCROLL TO BEGIN <span className="scroll-line" /></span></div></main>
+function Welcome({ onEnter, onGoogle, onEmail, onCreateWallet, onRestoreWallet, onConnectWeb3 }: { onEnter: () => void; onGoogle: () => void; onEmail: () => void; onCreateWallet: () => void; onRestoreWallet: () => void; onConnectWeb3: () => void }) {
+  return <main className="welcome-screen"><div className="welcome-grain" /><header className="welcome-top"><div className="welcome-brand"><Mark size={42} /><span><b>PrivateDAO</b><small>WALLET</small></span></div><div className="welcome-status"><i /> PRIVATE BY DESIGN</div></header><section className="welcome-content"><div className="welcome-copy"><div className="eyebrow welcome-eyebrow"><span className="eyebrow-dot" />A MORE CONSIDERED FINANCIAL WORLD</div><h1>A quieter way<br />to <em>hold value.</em></h1><p>Your assets and decisions, gathered in a private space made for clarity. Choose one way to begin; wallet approval is never requested automatically.</p><div className="welcome-choice-panel"><span className="welcome-choice-label">CHOOSE ONE WAY TO BEGIN</span><div className="welcome-choice-grid"><button onClick={onGoogle}><span className="choice-icon">G</span><span><b>Continue with Google</b><small>Human sign-in</small></span><ArrowRight size={15} /></button><button onClick={onEmail}><span className="choice-icon">@</span><span><b>Continue with email</b><small>Human sign-in</small></span><ArrowRight size={15} /></button><button onClick={onCreateWallet}><span className="choice-icon">✦</span><span><b>Create a wallet</b><small>Keys stay on this device</small></span><ArrowRight size={15} /></button><button onClick={onRestoreWallet}><span className="choice-icon">↺</span><span><b>Restore a wallet</b><small>Import or export locally</small></span><ArrowRight size={15} /></button><button className="choice-wide" onClick={onConnectWeb3}><span className="choice-icon">◈</span><span><b>Connect a Web3 wallet</b><small>Choose Phantom, Solflare, MetaMask and more</small></span><ArrowRight size={15} /></button></div></div><button className="welcome-cta welcome-quiet-entry" onClick={onEnter}>Explore privately without sign-in <ArrowRight size={18} /></button><div className="welcome-assurance"><ShieldCheck size={16} /><span>Self-custody, at the center</span><span className="assurance-sep">·</span><span>Your keys stay yours</span></div></div><div className="welcome-art" aria-hidden="true"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="orbit orbit-three" /><div className="art-glow" /><div className="welcome-plaque"><Mark size={82} /><span>PrivateDAO</span><small>Your world, in your hands.</small><div className="plaque-rule" /><div className="plaque-foot"><span>SELF CUSTODY</span><span>EST. ON CHAIN</span></div></div><div className="floating-stat stat-one"><span>ASSETS</span><b>Held by you</b><ShieldCheck size={17} /></div><div className="floating-stat stat-two"><span>DESIGNED FOR</span><b>Clarity <Sparkles size={14} /></b></div></div></section><div className="welcome-bottom"><span>PORTFOLIO <i /> MARKETS <i /> PRIVATEPAY <i /> INTELLIGENCE</span><span>SCROLL TO BEGIN <span className="scroll-line" /></span></div></main>
 }
 
 function MarketTicker({ prices, state, refresh }: { prices: Market[]; state: string; refresh: () => void }) {
