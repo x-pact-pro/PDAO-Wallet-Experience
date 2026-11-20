@@ -33,8 +33,16 @@ function NativeAuthRedirectHandler() {
       lastCallback.current = url
       try {
         await handleRedirectCallback(url)
-      } catch {
-        window.dispatchEvent(new Event('pdao-auth-error'))
+      } catch (error) {
+        const detail = error && typeof error === 'object'
+          ? error as { error?: string; error_description?: string }
+          : undefined
+        window.dispatchEvent(new CustomEvent('pdao-auth-error', {
+          detail: {
+            code: detail?.error ?? '',
+            description: detail?.error_description ?? '',
+          },
+        }))
       } finally {
         await Browser.close().catch(() => undefined)
       }

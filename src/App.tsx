@@ -97,7 +97,17 @@ function App() {
   const [toast, setToast] = useState('')
   const authRequestInFlight = useRef(false)
   useEffect(() => {
-    const reportAuthError = () => setToast('Sign-in could not be completed. Please try again.')
+    const reportAuthError = (event: Event) => {
+      const detail = (event as CustomEvent<{ code?: string; description?: string }>).detail
+      const description = `${detail?.code ?? ''} ${detail?.description ?? ''}`.toLowerCase()
+      if (description.includes('mfa') || description.includes('multifactor') || description.includes('otp')) {
+        setToast('Auth0 requires an additional verification step for this account. Complete it in the browser, or ask the workspace admin to adjust the staging MFA policy.')
+      } else if (description.includes('unauthorized') || description.includes('access_denied')) {
+        setToast('Auth0 did not authorize this sign-in. Choose one method and try again.')
+      } else {
+        setToast('Sign-in could not be completed. Please try again.')
+      }
+    }
     window.addEventListener('pdao-auth-error', reportAuthError)
     return () => window.removeEventListener('pdao-auth-error', reportAuthError)
   }, [])
