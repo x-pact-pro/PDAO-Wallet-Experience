@@ -24,6 +24,8 @@ Scope: PDAO Wallet Experience web SPA, Chrome Extension build, Android Capacitor
 - Android cleartext traffic is disabled except for localhost and backup is disabled.
 - Android minimum SDK is now 26; target SDK remains 35.
 - External wallet discovery supports Wallet Standard and EIP-6963 rather than assuming Phantom.
+- The Android app module now declares the distribution floor explicitly (`minSdkVersion 26`) in addition to the shared variables file; the regenerated debug manifest confirms 26. The connected device still has the previous debug APK until the replacement APK is successfully assembled and installed.
+- The Chrome Extension artifact preserves its directory structure and has been rebuilt as `PDAO-Wallet-Chrome-0.1.1-security-reviewed.zip`; it remains wallet-only in extension runtime because the relative extension origin disables Auth0 redirect login.
 
 ## Findings
 
@@ -53,6 +55,8 @@ The intended hostname is `wallet.privatedao.org`, while the currently verified A
 
 The extension uses `wasm-unsafe-eval` for wallet SDK compatibility and has several provider host permissions. Before store publication, minimize host permissions and image/network sources to the exact providers used by the release. Keep all extension authentication wallet-only unless an explicit extension callback is tested.
 
+The current allowlist is limited to the providers used by balances, quotes, Agent Exchange, and the Virginia wallet API. `wasm-unsafe-eval` is retained only for the embedded-wallet SDK compatibility path; removing it without testing that path can break wallet initialization. This remains a store-hardening item, not a reason to weaken signing or enable secrets in the extension.
+
 ### P2 — Seller Portal is preparation, not publication
 
 The Seller Portal is now live as a preparation workspace. It does not claim AWS Marketplace publication, create a seller account, change pricing, or submit a product. AWS registration, tax/banking verification, EULA, fulfillment, entitlement/metering, Limited testing and AWS review remain seller-controlled steps.
@@ -68,3 +72,11 @@ The Seller Portal is now live as a preparation workspace. It does not claim AWS 
 ## Release gate
 
 The product is not to be labeled fully production-ready for autonomous multi-network trading until all P0 and P1 findings have current runtime evidence. The current live web deployment is suitable for continued UX, identity, catalog and bounded human-flow testing.
+
+## Verification snapshot
+
+- `npm test`: passed, including Auth0 callback, onboarding, price formatting, and secret-boundary checks.
+- `npm run typecheck`: passed.
+- `npm run build:extension`: passed.
+- `git diff --check`: passed.
+- Current authenticated human execution remains explicit and bounded; no automated strategy is permitted to submit a transaction without a scoped authorization, limits, expiry, replay protection, and a kill switch.
