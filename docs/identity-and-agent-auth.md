@@ -8,19 +8,17 @@
 
 ## Current rollout state
 
-The current Auth0 clients belong to the `dev-xojmajo443e15z7n` tenant, which is
-shown as STAGING in the Auth0 dashboard. `public/pdao-config.js` marks this
-release as `environment: 'staging'`. The configured web and native callbacks are
-usable for staging previews and Android testing. The official production
-hostname remains a release boundary until a separately verified production
-tenant and clients are provisioned. Do not relabel the staging tenant as
-production or ship a production claim from this configuration.
+The current Auth0 clients belong to the `dev-xojmajo443e15z7n` tenant. The
+wallet runtime is configured for its production deployment target and includes
+the web, Amplify, GitHub Pages, and Android callback forms. This does not by
+itself prove that the custom hostname or a separately named production tenant
+is serving the same artifact. Recheck the live callback and logout paths
+before making a public production certification.
 
-Before production sign-in is enabled, provision and verify the production
-Auth0 tenant and its separate web and native clients. Set the production
-domain/client IDs, callback and logout URLs, Android deep link, and mark the
-runtime config `environment: 'production'`. Run Auth0 Production Readiness
-Checks before publishing that configuration. The web callback must include
+Before public certification, recheck the production Auth0 tenant and its
+separate web and native clients. Confirm the production
+domain/client IDs, callback and logout URLs, and Android deep link. Run Auth0
+Production Readiness Checks before public certification. The web callback must include
 `https://wallet.privatedao.org/auth/callback`; the native callback must match
 the Android package and Auth0 native-client settings. Never put a client
 secret in this public runtime file.
