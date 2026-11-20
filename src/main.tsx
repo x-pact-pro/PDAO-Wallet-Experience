@@ -24,16 +24,22 @@ const callbackUri = nativeRuntime
 
 function NativeAuthRedirectHandler() {
   const { handleRedirectCallback } = useAuth0()
-  const lastCallback = useRef('')
+  const processingCallback = useRef(false)
+  const processedCallbacks = useRef(new Set<string>())
   useEffect(() => {
     if (!nativeRuntime) return
     let active = true
     const handle = async (url: string) => {
-      if (!isNativeAuthCallback(url, auth0.nativeRedirectUri) || lastCallback.current === url) return
-      lastCallback.current = url
+      if (!isNativeAuthCallback(url, auth0.nativeRedirectUri) || processingCallback.current) return
+      const parsed = new URL(url)
+      const callbackKey = parsed.searchParams.get('code') || parsed.hash
+      if (!callbackKey || processedCallbacks.current.has(callbackKey)) return
+      processingCallback.current = true
       try {
         await handleRedirectCallback(url)
+        processedCallbacks.current.add(callbackKey)
       } catch (error) {
+        processedCallbacks.current.add(callbackKey)
         const detail = error && typeof error === 'object'
           ? error as { error?: string; error_description?: string }
           : undefined
@@ -44,6 +50,7 @@ function NativeAuthRedirectHandler() {
           },
         }))
       } finally {
+        processingCallback.current = false
         await Browser.close().catch(() => undefined)
       }
     }

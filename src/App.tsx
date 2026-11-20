@@ -99,6 +99,9 @@ function App() {
   const [embeddedWalletBusy, setEmbeddedWalletBusy] = useState(false)
   const authRequestInFlight = useRef(false)
   useEffect(() => {
+    if (isAuthenticated) authRequestInFlight.current = false
+  }, [isAuthenticated])
+  useEffect(() => {
     const reportAuthError = (event: Event) => {
       const detail = (event as CustomEvent<{ code?: string; description?: string }>).detail
       const description = `${detail?.code ?? ''} ${detail?.description ?? ''}`.toLowerCase()
