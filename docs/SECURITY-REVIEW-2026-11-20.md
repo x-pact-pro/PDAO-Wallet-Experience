@@ -24,8 +24,9 @@ Scope: PDAO Wallet Experience web SPA, Chrome Extension build, Android Capacitor
 - Android cleartext traffic is disabled except for localhost and backup is disabled.
 - Android minimum SDK is now 26; target SDK remains 35.
 - External wallet discovery supports Wallet Standard and EIP-6963 rather than assuming Phantom.
-- The Android app module now declares the distribution floor explicitly (`minSdkVersion 26`) in addition to the shared variables file; the regenerated debug manifest confirms 26. The connected device still has the previous debug APK until the replacement APK is successfully assembled and installed.
-- The Chrome Extension artifact preserves its directory structure and has been rebuilt as `PDAO-Wallet-Chrome-0.1.1-security-reviewed.zip`; it remains wallet-only in extension runtime because the relative extension origin disables Auth0 redirect login.
+- The Android app module declares the distribution floor explicitly (`minSdkVersion 26`) in addition to the shared variables file; the rebuilt APK reports `sdkVersion 26` and `targetSdkVersion 35`.
+- The rebuilt APK was installed on the connected device and `dumpsys package` reports `versionCode 2`, `versionName 0.1.1`, `minSdk 26`, and `targetSdk 35` for the single package `org.privatedao.wallet`.
+- The Chrome Extension artifact preserves its directory structure and has been rebuilt as `PDAO-Wallet-Chrome-0.1.1-source-f601a3e.zip`; it remains wallet-only in extension runtime because the relative extension origin disables Auth0 redirect login.
 
 ## Findings
 
@@ -78,5 +79,7 @@ The product is not to be labeled fully production-ready for autonomous multi-net
 - `npm test`: passed, including Auth0 callback, onboarding, price formatting, and secret-boundary checks.
 - `npm run typecheck`: passed.
 - `npm run build:extension`: passed.
+- `./gradlew :app:assembleDebug --offline`: passed; APK installed on the connected device with SDK floor 26 / target 35.
+- Android artifact: `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/f82a567/PDAO-Wallet-Atelier-0.1.1-debug-sdk26.apk` (SHA-256 recorded beside the artifact).
 - `git diff --check`: passed.
 - Current authenticated human execution remains explicit and bounded; no automated strategy is permitted to submit a transaction without a scoped authorization, limits, expiry, replay protection, and a kill switch.

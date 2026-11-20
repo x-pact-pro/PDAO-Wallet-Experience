@@ -11,7 +11,7 @@ being mistaken for production sources.
 | Chrome extension | The `dist-extension/` build produced from the same `main` source | Manual extension artifact; no separate application source |
 | Android app | The `android/` module in the same `main` source | Release signing/build pipeline; debug APK is for device QA only |
 | Agent Exchange and PrivatePAY | `https://github.com/x-pact-pro/PrivateDAO-Agent-Exchange` | AWS Lambda/API in `eu-north-1` |
-| Core/kernel | `/home/x-pact/PrivateDAO-CORE-UNIFIED` | Separate core deployment and release gates |
+| Core/kernel | Not used for this release review | Out of scope; do not import from an unrelated local checkout |
 
 ## Non-authoritative copies
 
@@ -39,4 +39,4 @@ being mistaken for production sources.
 5. A green build is not deployment evidence. Confirm the target AWS job and
    live hostname separately.
 
-Current reviewed wallet source: `main` commit `3d5fdd4`.
+Current reviewed wallet source: `main` commit `f82a567`.
