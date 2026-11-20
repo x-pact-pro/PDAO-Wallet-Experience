@@ -46,4 +46,4 @@ being mistaken for production sources.
    release ownership: its current package targets Node 22 and lacks the current
    runtime configuration contract used by this web/extension/Android release.
 
-Current reviewed wallet source: `main` commit `pending-unified-cleanup`.
+Current reviewed wallet source: `main` commit `60cc65965ce12656fa66fbb3d75c3383bd0fe64d`.
