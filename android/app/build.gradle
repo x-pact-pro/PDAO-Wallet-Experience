@@ -5,7 +5,8 @@ android {
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "org.privatedao.wallet"
-        minSdkVersion rootProject.ext.minSdkVersion
+        // Wallet distribution targets Android 8.0+; keep the app floor explicit.
+        minSdkVersion 26
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2
         versionName "0.1.1"
