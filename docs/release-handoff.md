@@ -1,5 +1,35 @@
 # Release handoff
 
+## r29 — Virginia deployment and verified Descope resource
+
+Source commit `3008c9b` binds the Agent Exchange UI to the verified Descope
+resource metadata while keeping runtime agent authorization disabled until an
+approved client policy and scoped-token acceptance test exist. The resource
+was verified in the PrivateDAO production Descope project with:
+
+| Field | Value |
+|---|---|
+| Resource | `PDAO Wallet Agent Gateway` (`RS3MMqZWGRlX86xgpf8MzQ30nqSJp`) |
+| URI | `https://nnnx1tvyqb.execute-api.us-east-1.amazonaws.com` |
+| Scope | `agent.identity.read` |
+| User access | `deny` |
+| Client access | `allowViaPolicy` |
+
+The production resource exists, but no Descope client or scoped token is
+claimed and `descope.enabled` remains `false`. Wallet keys remain browser or
+device-only. This keeps the Virginia gateway integration explicit without
+granting an agent access prematurely.
+
+The build was manually deployed to Amplify app `d2iwf2bo6lci0r` in
+`us-east-1` as job `52`; both DEPLOY and VERIFY succeeded. The public Amplify
+root returned HTTP 200 and served the updated resource ID. The Stockholm Agent
+Exchange Lambda and repository were not modified.
+
+`npm run typecheck`, `npm test`, `npm run build`, `npm run build:extension`,
+and `git diff --check` passed. Custom-domain DNS and the Auth0 production
+callback remain separate release gates; the preview continues to use the
+staging Auth0 environment until `wallet.privatedao.org` is verified.
+
 ## r28 — published Agent Exchange service routes
 
 Source commit `63d4519cb98f441e990a4ea86622af9772d12066` adds safe links from
