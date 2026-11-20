@@ -5,7 +5,7 @@ state, not intended state. A green build does not turn an unverified provider,
 DNS cutover, funded settlement, or autonomous trading capability into a
 production claim.
 
-Latest reviewed source commit: `db18494`.
+Latest reviewed source commit: `e03e1c8`.
 
 ## One source of truth
 
