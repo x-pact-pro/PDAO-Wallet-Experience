@@ -896,8 +896,8 @@ const botPolicyKey = 'pdao-bot-policy-v1'
 const teamBotsKey = 'pdao-team-bots-v1'
 const defaultBotPolicy: BotPolicy = { name: 'My PDAO Bot', network: 'Solana Mainnet', strategy: 'Momentum', tokens: 'SOL, USDC', maxOrder: '25', dailyBudget: '100', slippage: '50', stopLoss: '8', takeProfit: '15' }
 const defaultTeamBots: TeamBot[] = [
-  { id: 'scout', name: 'Market Scout', role: 'Research', strategy: 'Momentum watch', scope: 'Public market signals', enabled: true },
-  { id: 'risk', name: 'Risk Analyst', role: 'Risk review', strategy: 'Liquidity & holder review', scope: 'Read-only evidence', enabled: true },
+  { id: 'scout', name: 'Market Scout', role: 'Research', strategy: 'Momentum watch', scope: 'Public market signals', enabled: false },
+  { id: 'risk', name: 'Risk Analyst', role: 'Risk review', strategy: 'Liquidity & holder review', scope: 'Read-only evidence', enabled: false },
 ]
 const tradingApps: BotApp[] = [
   { name: 'Pump.fun', detail: 'Token launches · Solana', url: 'https://pump.fun/', mark: 'P', color: 'coral' },
@@ -919,7 +919,12 @@ function BotsWorkspace({ prices, services, onToast, onNavigate }: { prices: Mark
   const [tab, setTab] = useState<BotTab>('Policy')
   const [policy, setPolicy] = useState<BotPolicy>(() => readLocal(botPolicyKey, defaultBotPolicy))
   const [team, setTeam] = useState<TeamBot[]>(() => {
-    try { const saved = localStorage.getItem(teamBotsKey); return saved ? JSON.parse(saved) as TeamBot[] : defaultTeamBots }
+    try {
+      const saved = localStorage.getItem(teamBotsKey)
+      const parsed = saved ? JSON.parse(saved) as TeamBot[] : defaultTeamBots
+      // A profile cannot be active unless it has a current, explicitly selected route.
+      return parsed.map(bot => ({ ...bot, enabled: bot.enabled === true && Boolean(bot.routeId) }))
+    }
     catch { return defaultTeamBots }
   })
   const [secrets, setSecrets] = useState<import('./lib/walletVault').BotSecretRecord[]>([])
@@ -979,6 +984,17 @@ function BotsWorkspace({ prices, services, onToast, onNavigate }: { prices: Mark
   const relatedServices = services.filter(service => /wallet|risk|classif|research|market/i.test(`${service.id ?? ''} ${service.name ?? ''} ${service.title ?? ''}`)).slice(0, 4)
   const agentRoutes = services.filter(service => Boolean(service.id)).filter(service => /research|market|risk|wallet|decision|simulate|quote/i.test(`${service.id ?? ''} ${service.name ?? ''} ${service.title ?? ''}`))
   const routeTitle = (route: Service) => route.title ?? route.name ?? route.id ?? 'Agent route'
+  useEffect(() => {
+    if (!services.length) return
+    const available = new Set(agentRoutes.map(route => route.id))
+    setTeam(current => {
+      const next = current.map(bot => available.has(bot.routeId ?? '') ? bot : bot.enabled ? { ...bot, enabled: false } : bot)
+      if (next.some((bot, index) => bot !== current[index])) {
+        try { localStorage.setItem(teamBotsKey, JSON.stringify(next)) } catch { /* local-only preference; UI remains fail-closed */ }
+      }
+      return next
+    })
+  }, [services])
   const updateTeamBot = (id: string, update: Partial<TeamBot>) => saveTeam(team.map(item => item.id === id ? { ...item, ...update } : item))
   const toggleTeamBot = (bot: TeamBot) => {
     if (!bot.enabled && !bot.routeId) {
