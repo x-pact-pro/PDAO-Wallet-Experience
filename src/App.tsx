@@ -102,6 +102,11 @@ function App() {
     if (isAuthenticated) authRequestInFlight.current = false
   }, [isAuthenticated])
   useEffect(() => {
+    if (!isAuthenticated) return
+    sessionStorage.setItem('pdao-entered', '1')
+    setWelcome(false)
+  }, [isAuthenticated])
+  useEffect(() => {
     const reportAuthError = (event: Event) => {
       const detail = (event as CustomEvent<{ code?: string; description?: string }>).detail
       const description = `${detail?.code ?? ''} ${detail?.description ?? ''}`.toLowerCase()

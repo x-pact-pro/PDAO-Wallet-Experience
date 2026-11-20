@@ -14,6 +14,9 @@ if (directLoginCalls.length !== 1) {
 if (!source.includes('authRequestInFlight.current')) {
   throw new Error('Human sign-in must have a duplicate-request guard')
 }
+if (!source.includes("sessionStorage.setItem('pdao-entered', '1')\n    setWelcome(false)")) {
+  throw new Error('A completed Auth0 session must leave the onboarding screen without another sign-in action')
+}
 
 if (!source.includes('id="main-content"') || !source.includes('className="skip-link"')) {
   throw new Error('Main content must expose a keyboard skip target')
