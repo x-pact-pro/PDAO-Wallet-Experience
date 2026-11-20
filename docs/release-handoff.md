@@ -582,3 +582,17 @@ Artifacts:
 
 Amplify manual deployment job `49` completed `DEPLOY=SUCCEED` and
 `VERIFY=SUCCEED` in `us-east-1`. The public default host returned HTTP 200.
+
+## Build r31 — single-path onboarding and explicit wallet authorization
+
+Source commit: `0e0812b` on `main`.
+
+The welcome screen now presents one clear starting choice: Google, email,
+create wallet, restore wallet, or connect a Web3 wallet. Solana wallet
+discovery is read-only; provider authorization only runs after the user
+selects an explicit Connect action. Added a regression guard for this boundary.
+
+Verification: typecheck, tests, web build, Chrome MV3 build, Android API 35
+debug build, ADB install and clean-launch on `R58T33JGLHN`. Amplify manual
+deployment job `60` completed `DEPLOY=SUCCEED` and `VERIFY=SUCCEED` in
+`us-east-1`; the public bundle contains the new onboarding choice screen.
