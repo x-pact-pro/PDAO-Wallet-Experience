@@ -7,7 +7,7 @@ being mistaken for production sources.
 
 | Surface | Authoritative source | Deployment ownership |
 |---|---|---|
-| Wallet web SPA | `https://github.com/x-pact-pro/PDAO-Wallet-Experience`, branch `main` | AWS Amplify app `d2iwf2bo6lci0r`, `us-east-1`; latest verified successful job 117 |
+| Wallet web SPA | `https://github.com/x-pact-pro/PDAO-Wallet-Experience`, branch `main` | AWS Amplify app `d2iwf2bo6lci0r`, `us-east-1`; latest verified successful job 118 |
 | Chrome extension | The `dist-extension/` build produced from the same `main` source | Manual extension artifact; no separate application source |
 | Android app | The `android/` module in the same `main` source and the same `public/pdao-config.js` runtime configuration | Release signing/build pipeline; debug APK is for device QA only |
 | Agent Exchange and PrivatePAY | `https://github.com/x-pact-pro/PrivateDAO-Agent-Exchange` | AWS Lambda/API in `eu-north-1` |
@@ -46,4 +46,4 @@ being mistaken for production sources.
    release ownership: its current package targets Node 22 and lacks the current
    runtime configuration contract used by this web/extension/Android release.
 
-Current reviewed wallet source: `main` commit `031754c` (release code from `60cc659`; readiness documentation added in `031754c`).
+Current reviewed wallet source: `main` commit `db18494` (Alchemy Solana routing in `42d069e`; Android web assets synced in `db18494`).
