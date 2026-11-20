@@ -1,5 +1,20 @@
 # Release handoff
 
+## r30 — fail-closed team bot activation
+
+Source commit `53f52c8` closes a real state mismatch in Team Bots: default and
+previously saved profiles are now paused unless they have an explicitly
+selected live Agent Exchange route. When the current catalog no longer
+contains a selected route, the profile is automatically persisted as paused.
+This keeps the UI state aligned with the existing no-autonomous-trade safety
+boundary.
+
+The updated build was manually deployed to Amplify app `d2iwf2bo6lci0r` in
+`us-east-1` as job `56`; DEPLOY and VERIFY both succeeded. The public root
+returned HTTP 200, and the served bundle contains the route-pending state plus
+the verified Descope resource metadata. No Stockholm Agent Exchange code or
+deployment was changed.
+
 ## r29 — Virginia deployment and verified Descope resource
 
 Source commit `3008c9b` binds the Agent Exchange UI to the verified Descope
