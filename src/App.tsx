@@ -15,7 +15,7 @@ import {
   Bot, ChevronDown, CircleHelp, Command, Compass, ExternalLink,
   Eye, EyeOff, FileJson, Fingerprint, LayoutDashboard, LockKeyhole, Menu,
   MessageCircle, PanelLeftClose, Plus, RefreshCw, Search, ShieldCheck,
-  Sparkles, Star, Trash2, Wallet, X,
+  Sparkles, Star, Store, Trash2, Wallet, X,
   type LucideIcon,
 } from 'lucide-react'
 import { formatUsdPrice } from './lib/formatPrice'
@@ -24,7 +24,7 @@ import './App.css'
 import './AppRefinements.css'
 import './Ask.css'
 
-type Section = 'overview' | 'markets' | 'trade' | 'alpha' | 'exchange' | 'wallet' | 'bots' | 'payments' | 'identity' | 'ask'
+type Section = 'overview' | 'markets' | 'trade' | 'alpha' | 'exchange' | 'seller' | 'wallet' | 'bots' | 'payments' | 'identity' | 'ask'
 type Market = { id: string; symbol: string; name: string; image: string; price: number; change: number; volume: number; sparkline?: number[] }
 type NetworkStatus = { network: string; label?: string; status: string; latency_ms?: number; provider?: string; cluster?: string; block_number?: string }
 type Service = { id?: string; name?: string; title?: string; description?: string; summary?: string; category?: string; price?: number | string; currency?: string; pricing?: unknown; public_url?: string; input?: string; input_schema?: Record<string, unknown>; input_requirements?: Record<string, unknown>; free?: boolean; status?: string; execution?: string }
@@ -42,6 +42,7 @@ const navItems: { id: Section; label: string; icon: LucideIcon; group?: string }
   { id: 'trade', label: 'Trade', icon: ArrowLeftRight },
   { id: 'alpha', label: 'Alpha', icon: Sparkles, group: 'Discover' },
   { id: 'exchange', label: 'Agent exchange', icon: Compass },
+  { id: 'seller', label: 'Seller portal', icon: Store, group: 'Business' },
   { id: 'bots', label: 'Bots', icon: Bot, group: 'Automate' },
   { id: 'wallet', label: 'Wallets', icon: Wallet, group: 'Manage' },
   { id: 'payments', label: 'PrivatePAY', icon: LockKeyhole },
@@ -54,6 +55,7 @@ const sectionMeta: Record<Section, { eyebrow: string; title: string; subtitle: s
   trade: { eyebrow: 'EXECUTION DESK', title: 'Trade with intention.', subtitle: 'Review live quotes before you approve a transaction.' },
   alpha: { eyebrow: 'DISCOVERY', title: 'Find the signal.', subtitle: 'Explore momentum, liquidity and emerging on-chain activity.' },
   exchange: { eyebrow: 'PDAO AGENT EXCHANGE', title: 'Intelligence at your service.', subtitle: 'Discover live capabilities and their published prices.' },
+  seller: { eyebrow: 'AWS MARKETPLACE', title: 'Bring PDAO to more teams.', subtitle: 'Prepare a polished SaaS listing with the evidence buyers and AWS need.' },
   bots: { eyebrow: 'TRADING WORKSPACE', title: 'Your strategy, clearly set.', subtitle: 'Shape a policy, protect your secrets locally, and choose where to trade.' },
   wallet: { eyebrow: 'SELF CUSTODY', title: 'Your keys. Your world.', subtitle: 'Manage the wallets you control, with care.' },
   payments: { eyebrow: 'PRIVATEPAY', title: 'Payments, thoughtfully private.', subtitle: 'Prepare a payment from an exact provider quote.' },
@@ -382,6 +384,7 @@ function App() {
         {section === 'trade' && <Trade prices={prices} amount={amount} setAmount={setAmount} onToast={setToast} connectedWallets={connectedWallets} onNavigate={changeSection} />}
         {section === 'alpha' && <Alpha prices={prices} state={priceState} onNavigate={changeSection} />}
         {section === 'exchange' && <Exchange services={filteredServices} state={serviceState} query={query} setQuery={setQuery} category={category} setCategory={setCategory} refresh={refreshServices} />}
+        {section === 'seller' && <SellerPortal services={services} state={serviceState} />}
         {section === 'wallet' && <Wallets onToast={setToast} standardWallets={standardWallets} evmProviders={evmProviders} connectedWallets={connectedWallets} onConnectSolana={connectStandard} onConnectEvm={connectEvm} onConnectEmbedded={() => void startEmbeddedWallet()} onDisconnectExternal={disconnectExternal} onRescanWallets={rescanWalletProviders} />}
         {section === 'bots' && <BotsWorkspace prices={prices} services={services} onToast={setToast} onNavigate={changeSection} />}
         {section === 'payments' && <Payments amount={amount} setAmount={setAmount} onToast={setToast} onNavigate={setSection} connectedWallets={connectedWallets} />}
@@ -840,6 +843,32 @@ function ServiceCard({ service, onSelect }: { service: Service; onSelect: (servi
   const price = typeof service.price === 'number' ? `${service.price} ${service.currency ?? 'USDC'}` : typeof service.price === 'string' ? service.price : 'See provider quote'
   const href = typeof service.public_url === 'string' && /^https:\/\//i.test(service.public_url) ? service.public_url : undefined
   return <article className="service-card card-surface"><button className="service-card-main" onClick={() => onSelect(service)}><div className="service-card-top"><span className="service-icon"><Command size={20} /></span><span className="service-category">{service.category ?? 'PDAO SERVICE'}</span></div><code>{service.id ?? 'agent.service'}</code><h3>{title}</h3><p>{service.summary ?? service.description ?? 'A live capability from the PDAO Agent Exchange.'}</p></button><div className="service-card-footer"><span>Published price <b>{price}</b></span><div className="service-card-actions"><button className="service-card-link" onClick={() => onSelect(service)} aria-label={`Open ${title}`}><ArrowRight size={15} /></button>{href ? <a className="service-card-link" href={href} target="_blank" rel="noopener noreferrer" aria-label={`View public ${title}`}><ArrowUpRight size={17} /></a> : <span className="service-card-link is-unavailable" aria-label="Service link unavailable"><ArrowUpRight size={17} /></span>}</div></div></article>
+}
+
+function SellerPortal({ services, state }: { services: Service[]; state: string }) {
+  const pricedServices = services.filter(service => service.price !== undefined).slice(0, 6)
+  const steps = [
+    ['01', 'Seller registration', 'Verify the legal entity, identity, tax profile and payout account in AWS Partner Central.', 'OWNER'],
+    ['02', 'Public seller profile', 'Publish the PrivateDAO name, website, support contact and brand assets buyers can verify.', 'READY TO PREPARE'],
+    ['03', 'SaaS product draft', 'Create a Software → SaaS product and keep it in Limited while the fulfillment flow is tested.', 'DRAFT'],
+    ['04', 'Entitlement & metering', 'Connect subscription or contract events, customer onboarding and access provisioning.', 'INTEGRATION'],
+    ['05', 'Review & launch', 'Replace test pricing, attach the EULA and submit the completed listing to AWS Marketplace review.', 'AWS REVIEW'],
+  ]
+  return <div className="seller-page">
+    <section className="seller-hero card-surface">
+      <div className="seller-hero-copy"><span className="exchange-status"><i />PREPARATION WORKSPACE</span><h2>PrivateDAO,<br /><em>ready for the next room.</em></h2><p>One calm workspace for your AWS Marketplace seller profile, product metadata and live Agent Exchange catalog.</p><div className="seller-hero-actions"><a className="button-primary" href="https://us-east-1.console.aws.amazon.com/partnercentral/home" target="_blank" rel="noreferrer">Open Partner Central <ExternalLink size={15} /></a><span className="seller-draft-badge"><i />Not published</span></div></div>
+      <div className="seller-seal"><Store size={32} /><b>SAAS</b><small>LISTING DESK</small><span>US-EAST-1</span></div>
+    </section>
+    <div className="seller-grid">
+      <section className="seller-checklist card-surface"><div className="seller-section-heading"><div><span className="small-label">LAUNCH PATH</span><h3>Everything in order.</h3></div><span className="seller-progress">0 / 5 submitted</span></div><div className="seller-steps">{steps.map(([number, title, copy, status]) => <article key={number}><span className="seller-step-number">{number}</span><div><b>{title}</b><p>{copy}</p></div><span className="seller-step-status">{status}</span></article>)}</div></section>
+      <aside className="seller-side-stack">
+        <section className="seller-readiness card-surface"><span className="small-label">LISTING READINESS</span><div className="seller-score"><strong>Draft</strong><span>Keep the listing private until identity, fulfillment and billing are verified.</span></div><div className="seller-readiness-line"><span /><span /><span /><span /><span /></div><a className="text-action" href="https://docs.aws.amazon.com/marketplace/latest/userguide/create-public-profile.html" target="_blank" rel="noreferrer">Read seller requirements <ExternalLink size={13} /></a></section>
+        <section className="seller-budget card-surface"><span className="small-label">SECURITY & BUDGET</span><h3>$200 reserved with intention.</h3><p>ACM public certificates for AWS-integrated services are free. Keep the budget for a specific domain purchase, exportable certificate, or required marketplace asset only after approval.</p><div className="seller-budget-row"><span>ACM certificate</span><b>Included with AWS</b></div><div className="seller-budget-row"><span>Paid domain / external cert</span><b>Not selected</b></div></section>
+      </aside>
+    </div>
+    <section className="seller-catalog card-surface"><div className="seller-section-heading"><div><span className="small-label">LIVE AGENT EXCHANGE CATALOG</span><h3>Offer the capabilities you already operate.</h3></div><span className={`seller-live ${state === 'live' ? 'is-live' : ''}`}><i />{state === 'live' ? `${services.length} live services` : 'Catalog unavailable'}</span></div><div className="seller-price-grid">{pricedServices.map((service, index) => <article key={service.id ?? index}><span>{service.category ?? 'PDAO SERVICE'}</span><b>{service.title ?? service.name ?? service.id}</b><small>{service.summary ?? service.description ?? 'Published Agent Exchange capability.'}</small><strong>{String(service.price)} {service.currency ?? 'USDC'}</strong></article>)}{!pricedServices.length && <p className="seller-empty">Pricing will appear when Agent Exchange responds.</p>}</div><div className="seller-catalog-note"><ShieldCheck size={16} /><span>Catalog prices are read from Agent Exchange. AWS Marketplace pricing, EULA and customer entitlement configuration remain separate seller-controlled steps.</span></div></section>
+    <section className="seller-links"><a href="https://docs.aws.amazon.com/marketplace/latest/userguide/saas-create-product-page.html" target="_blank" rel="noreferrer"><FileJson size={17} /><span><b>Create the SaaS draft</b><small>AWS Marketplace official guide</small></span><ArrowUpRight size={15} /></a><a href="https://docs.aws.amazon.com/marketplace/latest/userguide/saas-product-customer-setup.html" target="_blank" rel="noreferrer"><ShieldCheck size={17} /><span><b>Prepare customer onboarding</b><small>Fulfillment URL and marketplace token</small></span><ArrowUpRight size={15} /></a><a href="https://aws.amazon.com/marketplace/management/" target="_blank" rel="noreferrer"><Store size={17} /><span><b>Manage seller operations</b><small>Marketplace management portal</small></span><ArrowUpRight size={15} /></a></section>
+  </div>
 }
 
 function Wallets({ onToast, standardWallets, evmProviders, connectedWallets, onConnectSolana, onConnectEvm, onConnectEmbedded, onDisconnectExternal, onRescanWallets }: { onToast: (s: string) => void; standardWallets: readonly StandardWallet[]; evmProviders: EvmProviderOption[]; connectedWallets: ConnectedExternalWallet[]; onConnectSolana: (wallet: StandardWallet) => void; onConnectEvm: (provider: EvmProviderOption) => void; onConnectEmbedded: () => void; onDisconnectExternal: (id: string) => void; onRescanWallets: () => void }) {
