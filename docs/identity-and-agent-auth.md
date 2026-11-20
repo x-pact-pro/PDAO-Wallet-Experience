@@ -25,9 +25,9 @@ Checks before publishing that configuration. The web callback must include
 the Android package and Auth0 native-client settings. Never put a client
 secret in this public runtime file.
 
-The connected Descope project is named `PrivateDAO` and is confirmed as a production project in the United States. It currently has SSO, flows, roles, permissions, and access keys; tenant setup is listed as a gap. The project has no API Resources or agentic clients yet, and its FGA schema is empty. Runtime `descope.enabled` remains `false` in `public/pdao-config.js`.
+The connected Descope project is named `PrivateDAO` and is confirmed as a production project in the United States. It currently has SSO, flows, roles, permissions, and access keys; tenant setup is listed as a gap. The API Resource `RS3MMqZWGRlX86xgpf8MzQ30nqSJp` is now registered for the Virginia gateway with `agent.identity.read`, `clientAccess: allowViaPolicy`, and `userAccess: deny`. No agentic client or scoped-token acceptance check is configured yet. Runtime `descope.enabled` remains `false` in `public/pdao-config.js`.
 
-A PDAO-owned HTTP API is deployed in AWS `us-east-1` at `https://nnnx1tvyqb.execute-api.us-east-1.amazonaws.com`. API Gateway has a native Descope JWT authorizer configured with issuer `https://api.descope.com/P3LeEm9CWaHUiGrt0hNS1Xglk2Mt`, the API URL as the exact audience, and a protected `GET /v1/agent/identity` route requiring `agent.identity.read`. Live evidence: `GET /health` returns 200; the protected identity route returns 401 without a bearer token. The Descope Resource, client grants, and valid scoped-token acceptance check are pending, so the API does not yet accept an agent token; the UI reports **Descope Resource binding pending**. The official creation route is `POST /v1/mgmt/resource/create`; the current local Management Key is rejected with `401 / E111003 (Management key does not exist)`, so no substitute FGA object or unverified branding has been used.
+A PDAO-owned HTTP API is deployed in AWS `us-east-1` at `https://nnnx1tvyqb.execute-api.us-east-1.amazonaws.com`. API Gateway has a native Descope JWT authorizer configured with issuer `https://api.descope.com/P3LeEm9CWaHUiGrt0hNS1Xglk2Mt`, the API URL as the exact audience, and a protected `GET /v1/agent/identity` route requiring `agent.identity.read`. Live evidence: `GET /health` returns 200; the protected identity route returns 401 without a bearer token. The Resource is now registered, but an approved client policy and valid scoped-token acceptance check are still pending; the UI reports **Resource created · client policy pending**. The official creation route is `POST /v1/mgmt/resource/create`, and the resource was finalized through `POST /v1/mgmt/resource/update` after the initial create response was inconsistent.
 
 The existing Stockholm Agent Exchange API owns its route contract. Public catalog and x402 payment flows retain their current behavior; wallet-signed x402 authorization remains separate from agent identity. Do not attach a mandatory Descope check to those user payment routes or change the Stockholm Lambda as part of this wallet release.
 
@@ -48,7 +48,7 @@ The SPA, extension, and Android app use the same gateway audience and server-sid
 
 ## Branding and provider disclosures
 
-Use the provider name **Descope** with the linked official documentation in agent-security surfaces. Only display “secured by Descope” or “Powered by Descope” after the API Resource, scoped clients, and token acceptance/rejection checks are configured and verified. Until then, show **Gateway deployed / Descope Resource binding pending**. Keep Auth0 attribution tied only to enabled human sign-in.
+Use the provider name **Descope** with the linked official documentation in agent-security surfaces. Only display “secured by Descope” or “Powered by Descope” after the API Resource, scoped clients, and token acceptance/rejection checks are configured and verified. Until then, show **Resource created · client policy pending**. Keep Auth0 attribution tied only to enabled human sign-in.
 
 ## References
 

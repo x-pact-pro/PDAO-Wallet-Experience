@@ -13,6 +13,7 @@ window.PDAO_CONFIG = Object.freeze({
   descope: Object.freeze({
     enabled: false,
     projectId: 'P3LeEm9CWaHUiGrt0hNS1Xglk2Mt',
+    resourceId: 'RS3MMqZWGRlX86xgpf8MzQ30nqSJp',
     agentApiOrigin: 'https://nnnx1tvyqb.execute-api.us-east-1.amazonaws.com',
   }),
   persona: Object.freeze({ templateId: '', environmentId: '' }),
