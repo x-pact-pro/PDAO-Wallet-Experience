@@ -30,7 +30,7 @@ if (!welcomeWiring.includes("onGoogle={() => startHumanSignIn('google-oauth2')}"
 if (!welcomeWiring.includes("onEmail={() => startHumanSignIn('email')}")) {
   throw new Error('Email onboarding must use the guarded Auth0 sign-in helper')
 }
-for (const localEntry of ['onCreateWallet={() => void startEmbeddedWallet()}', 'onRestoreWallet={() => enter(\'wallet\')}', 'onConnectWeb3={() => enter(\'wallet\')}']) {
+for (const localEntry of ['onCreateWallet={() => enter(\'wallet\')}', 'onRestoreWallet={() => enter(\'wallet\')}', 'onConnectWeb3={() => enter(\'wallet\')}']) {
   if (!welcomeWiring.includes(localEntry)) throw new Error(`Wallet onboarding must not require Auth0: ${localEntry}`)
 }
 if (/on(?:CreateWallet|RestoreWallet|ConnectWeb3)=\{\(\) => startHumanSignIn/.test(welcomeWiring)) {
