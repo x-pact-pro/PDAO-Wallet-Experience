@@ -25,8 +25,13 @@ const SOLANA_TOKEN_PROGRAMS = [
   'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
 ] as const
 
+const alchemySolanaRpc = window.PDAO_CONFIG.alchemy.ethereumRpc.replace(
+  'eth-mainnet.g.alchemy.com',
+  'solana-mainnet.g.alchemy.com',
+)
+
 const RPCS: Record<PortfolioNetwork, readonly string[]> = {
-  'solana-mainnet': ['https://api.mainnet.solana.com', 'https://solana-rpc.publicnode.com'],
+  'solana-mainnet': [alchemySolanaRpc, 'https://api.mainnet.solana.com', 'https://solana-rpc.publicnode.com'],
   'ethereum-mainnet': [window.PDAO_CONFIG.alchemy.ethereumRpc, 'https://cloudflare-eth.com', 'https://ethereum-rpc.publicnode.com'],
 }
 

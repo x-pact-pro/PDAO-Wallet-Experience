@@ -40,8 +40,8 @@ being mistaken for production sources.
    live hostname separately.
 6. The Seller Portal draft is not part of the wallet release surface and is
    removed from navigation and route rendering.
-7. Alchemy is the primary configured EVM RPC for the web, extension and
-   Android bundle; public fallbacks remain only for availability.
+7. Alchemy is the primary configured EVM and Solana RPC for the web, extension
+   and Android bundle; public fallbacks remain only for availability.
 8. `https://github.com/x-pact-pro/PDAO-Wallet` is retained for comparison, not
    release ownership: its current package targets Node 22 and lacks the current
    runtime configuration contract used by this web/extension/Android release.
