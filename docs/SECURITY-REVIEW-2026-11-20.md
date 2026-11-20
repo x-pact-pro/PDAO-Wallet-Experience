@@ -58,9 +58,12 @@ The extension uses `wasm-unsafe-eval` for wallet SDK compatibility and has sever
 
 The current allowlist is limited to the providers used by balances, quotes, Agent Exchange, and the Virginia wallet API. `wasm-unsafe-eval` is retained only for the embedded-wallet SDK compatibility path; removing it without testing that path can break wallet initialization. This remains a store-hardening item, not a reason to weaken signing or enable secrets in the extension.
 
-### P2 — Seller Portal is preparation, not publication
+### P2 — Marketplace publication remains out of scope
 
-The Seller Portal is now live as a preparation workspace. It does not claim AWS Marketplace publication, create a seller account, change pricing, or submit a product. AWS registration, tax/banking verification, EULA, fulfillment, entitlement/metering, Limited testing and AWS review remain seller-controlled steps.
+The accidental Seller Portal draft was removed from the wallet navigation and
+route surface. AWS Marketplace registration, tax/banking verification, EULA,
+fulfillment, entitlement/metering, Limited testing and AWS review remain
+outside the wallet release surface.
 
 ## Current supported execution surface
 
@@ -79,6 +82,8 @@ The product is not to be labeled fully production-ready for autonomous multi-net
 - `npm test`: passed, including Auth0 callback, onboarding, price formatting, and secret-boundary checks.
 - `npm run typecheck`: passed.
 - `npm run build:extension`: passed.
+- Alchemy Ethereum Mainnet RPC probe: HTTP 200, chain id `0x1`; configured as
+  the primary EVM balance/transfer endpoint with public fallbacks.
 - `./gradlew :app:assembleDebug --offline`: passed; APK installed on the connected device with SDK floor 26 / target 35.
 - Android artifact: `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/f82a567/PDAO-Wallet-Atelier-0.1.1-debug-sdk26.apk` (SHA-256 recorded beside the artifact).
 - `git diff --check`: passed.

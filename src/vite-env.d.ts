@@ -8,5 +8,6 @@ interface Window {
     persona: { templateId: string; environmentId: string }
     marketData: { origin: string }
     walletApi: { origin: string }
+    alchemy: { ethereumRpc: string }
   }
 }

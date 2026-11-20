@@ -7,9 +7,9 @@ being mistaken for production sources.
 
 | Surface | Authoritative source | Deployment ownership |
 |---|---|---|
-| Wallet web SPA | `https://github.com/x-pact-pro/PDAO-Wallet-Experience`, branch `main` | AWS Amplify, `us-east-1` |
+| Wallet web SPA | `https://github.com/x-pact-pro/PDAO-Wallet-Experience`, branch `main` | AWS Amplify app `d2iwf2bo6lci0r`, `us-east-1`; manual deployment job 112 |
 | Chrome extension | The `dist-extension/` build produced from the same `main` source | Manual extension artifact; no separate application source |
-| Android app | The `android/` module in the same `main` source | Release signing/build pipeline; debug APK is for device QA only |
+| Android app | The `android/` module in the same `main` source and the same `public/pdao-config.js` runtime configuration | Release signing/build pipeline; debug APK is for device QA only |
 | Agent Exchange and PrivatePAY | `https://github.com/x-pact-pro/PrivateDAO-Agent-Exchange` | AWS Lambda/API in `eu-north-1` |
 | Core/kernel | Not used for this release review | Out of scope; do not import from an unrelated local checkout |
 
@@ -38,5 +38,12 @@ being mistaken for production sources.
    work have been reviewed; archive or quarantine first when uncertain.
 5. A green build is not deployment evidence. Confirm the target AWS job and
    live hostname separately.
+6. The Seller Portal draft is not part of the wallet release surface and is
+   removed from navigation and route rendering.
+7. Alchemy is the primary configured EVM RPC for the web, extension and
+   Android bundle; public fallbacks remain only for availability.
+8. `https://github.com/x-pact-pro/PDAO-Wallet` is retained for comparison, not
+   release ownership: its current package targets Node 22 and lacks the current
+   runtime configuration contract used by this web/extension/Android release.
 
-Current reviewed wallet source: `main` commit `f82a567`.
+Current reviewed wallet source: `main` commit `pending-unified-cleanup`.

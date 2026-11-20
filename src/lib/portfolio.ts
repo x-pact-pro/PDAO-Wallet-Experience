@@ -27,7 +27,7 @@ const SOLANA_TOKEN_PROGRAMS = [
 
 const RPCS: Record<PortfolioNetwork, readonly string[]> = {
   'solana-mainnet': ['https://api.mainnet.solana.com', 'https://solana-rpc.publicnode.com'],
-  'ethereum-mainnet': ['https://cloudflare-eth.com', 'https://ethereum-rpc.publicnode.com'],
+  'ethereum-mainnet': [window.PDAO_CONFIG.alchemy.ethereumRpc, 'https://cloudflare-eth.com', 'https://ethereum-rpc.publicnode.com'],
 }
 
 async function rpc<T>(network: PortfolioNetwork, method: string, params: unknown[]): Promise<T> {

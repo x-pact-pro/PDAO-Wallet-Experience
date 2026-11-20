@@ -28,4 +28,7 @@ window.PDAO_CONFIG = Object.freeze({
   walletApi: Object.freeze({
     origin: 'https://rhp4rjefsk.execute-api.us-east-1.amazonaws.com',
   }),
+  alchemy: Object.freeze({
+    ethereumRpc: 'https://eth-mainnet.g.alchemy.com/v2/alch_PGMjc0gxPGQsRvNMnR2G5',
+  }),
 })
