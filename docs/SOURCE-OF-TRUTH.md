@@ -36,4 +36,4 @@ being mistaken for production sources.
 5. A green build is not deployment evidence. Confirm the target AWS job and
    live hostname separately.
 
-Current reviewed wallet source: `main` commit `b76bb24`.
+Current reviewed wallet source: `main` commit `3d5fdd4`.
