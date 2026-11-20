@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc -b --pretty false",
-    "test": "node --experimental-strip-types scripts/test-auth-callback.mjs && node --experimental-strip-types scripts/test-price-format.mjs && node scripts/test-onboarding-boundary.mjs",
+    "test": "node --experimental-strip-types scripts/test-auth-callback.mjs && node --experimental-strip-types scripts/test-price-format.mjs && node scripts/test-onboarding-boundary.mjs && node scripts/test-security-boundary.mjs",
     "build": "tsc -b && vite build",
     "build:extension": "tsc -b && vite build --config vite.config.extension.ts",
     "lint": "oxlint src scripts",
