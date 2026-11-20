@@ -95,6 +95,7 @@ function App() {
   const [amount, setAmount] = useState('0.10')
   const [menuOpen, setMenuOpen] = useState(false)
   const [toast, setToast] = useState('')
+  const authRequestInFlight = useRef(false)
   useEffect(() => {
     const reportAuthError = () => setToast('Sign-in could not be completed. Please try again.')
     window.addEventListener('pdao-auth-error', reportAuthError)
@@ -288,13 +289,18 @@ function App() {
 
   const enter = (destination: Section = 'overview') => { sessionStorage.setItem('pdao-entered', '1'); setSection(destination); setWelcome(false) }
   const startHumanSignIn = (connection?: string) => {
+    if (authRequestInFlight.current || authLoading || isAuthenticated) return
     if (authEnvironmentMismatch) { setToast('Secure sign-in is not configured for this release environment.'); return }
     if (!authEnabled) { setToast('Sign-in is unavailable in this release. You can continue with a wallet directly.'); return }
+    authRequestInFlight.current = true
     sessionStorage.setItem('pdao-entered', '1')
     void loginWithRedirect({
       ...(connection ? { authorizationParams: { connection } } : {}),
       appState: { returnTo: window.location.pathname + window.location.hash },
       ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}),
+    }).catch(() => {
+      authRequestInFlight.current = false
+      setToast('Sign-in could not be completed. Please choose one sign-in method and try again.')
     })
   }
   const changeSection = (id: Section) => { setSection(id); setMobileNav(false) }
@@ -308,6 +314,7 @@ function App() {
   })
 
   return <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <a className="skip-link" href="#main-content">Skip to main content</a>
     <aside className={`sidebar ${mobileNav ? 'sidebar-open' : ''}`}>
       <div className="sidebar-brand"><Mark size={40} /><span><b>PrivateDAO</b><small>WALLET · MAINNET</small></span><button className="icon-button sidebar-close" aria-label="Close navigation" onClick={() => setMobileNav(false)}><X size={18} /></button></div>
       <div className="workspace-select"><span className="workspace-avatar">P</span><span className="workspace-label"><b>Personal workspace</b><small>Self-custody account</small></span><ChevronDown size={15} /></div>
@@ -322,13 +329,13 @@ function App() {
     </aside>
     {mobileNav && <button className="scrim" aria-label="Close navigation" onClick={() => setMobileNav(false)} />}
 
-    <main className="main-area">
+    <main id="main-content" className="main-area">
       <header className="topbar">
         <button className="icon-button mobile-menu" aria-label="Open navigation" onClick={() => setMobileNav(true)}><Menu size={20} /></button>
         <div className="breadcrumb"><span>Workspace</span><span className="crumb-slash">/</span><b>{navItems.find(item => item.id === section)?.label}</b></div>
         <div className="topbar-actions"><button className="network-pill"><i /> MAINNET</button><button className="account-button" onClick={() => {
           if (isAuthenticated) void logout({ logoutParams: { returnTo: nativeAuth ? nativeRedirectUri : `${window.location.origin}${import.meta.env.BASE_URL}` }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })
-          else if (authEnabled) void loginWithRedirect({ appState: { returnTo: window.location.pathname + window.location.hash }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })
+          else if (authEnabled) startHumanSignIn()
           else if (authEnvironmentMismatch) setToast('Secure sign-in is not configured for this release environment. You can still connect a wallet directly.')
           else { changeSection('wallet'); setToast('Connect any available wallet directly. An account sign-in is not required.') }
         }}><span className="account-dot">{isAuthenticated ? (user?.name?.slice(0, 1) ?? 'P') : 'P'}</span><span>{authLoading ? 'Loading…' : isAuthenticated ? (user?.name ?? 'Account') : 'Sign in'}</span><ChevronDown size={14} /></button></div>
@@ -346,7 +353,7 @@ function App() {
         {section === 'payments' && <Payments amount={amount} setAmount={setAmount} onToast={setToast} onNavigate={setSection} connectedWallets={connectedWallets} />}
         {section === 'identity' && <Identity authenticated={isAuthenticated} onDockLogin={() => {
           if (authEnvironmentMismatch) { setToast('Dock sign-in is unavailable until production identity is configured.'); return }
-          if (authEnabled) void loginWithRedirect({ authorizationParams: authConfig.dockConnection ? { connection: authConfig.dockConnection } : undefined, appState: { returnTo: window.location.pathname + window.location.hash }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })
+          if (authEnabled) startHumanSignIn(authConfig.dockConnection || undefined)
         }} />}
         {section === 'ask' && <Ask services={services} />}
         <footer className="page-footer"><span>PrivateDAO Wallet <span className="footer-dot">·</span> Private by design <span className="footer-dot">·</span> <a href={`${import.meta.env.BASE_URL}terms.html`}>Terms</a> <span className="footer-dot">·</span> <a href={`${import.meta.env.BASE_URL}privacy.html`}>Privacy</a>{authEnabled && <span className="auth0-attribution"><img src={`${import.meta.env.BASE_URL}assets/auth0-logo.png`} alt="" /> Powered by Auth0</span>}</span><span>Prices from CoinGecko <span className="footer-dot">·</span> {priceState === 'live' ? 'Updated just now' : 'Market feed status shown above'}</span></footer>
@@ -354,7 +361,7 @@ function App() {
     </main>
     <nav className="mobile-tabs" aria-label="Quick navigation">{(['overview','markets','trade','wallet'] as Section[]).map(id => { const item = navItems.find(nav => nav.id === id)!; return <button key={id} className={section === id ? 'selected' : ''} onClick={() => changeSection(id)}><item.icon size={19} /><span>{item.label}</span></button> })}</nav>
     {menuOpen && <nav className="floating-menu" aria-label="Quick navigation"><div className="floating-menu-heading"><b>Go to</b><kbd>ESC</kbd></div>{navItems.map(item => <button key={item.id} onClick={() => { changeSection(item.id); setMenuOpen(false) }}><item.icon size={15} /><span>{item.label}</span></button>)}</nav>}
-    {toast && <div className="toast" role="status"><span className="toast-mark"><Mark size={20} /></span>{toast}<button aria-label="Dismiss" onClick={() => setToast('')}><X size={15} /></button></div>}
+    {toast && <div className="toast" role="status" aria-live="polite"><span className="toast-mark"><Mark size={20} /></span>{toast}<button aria-label="Dismiss" onClick={() => setToast('')}><X size={15} /></button></div>}
     <button className="shortcut-trigger" aria-label="Open quick navigation" aria-expanded={menuOpen} title="Quick navigation · Ctrl/⌘ K" onClick={() => setMenuOpen(open => !open)}><Command size={15} /></button>
     {featured && <span className="sr-only">Solana {formatUsdPrice(featured.price)} {featured.change.toFixed(2)} percent 24 hour change</span>}
   </div>
