@@ -361,7 +361,7 @@ function App() {
         <div className="breadcrumb"><span>Workspace</span><span className="crumb-slash">/</span><b>{navItems.find(item => item.id === section)?.label}</b></div>
         <div className="topbar-actions"><button className="network-pill"><i /> MAINNET</button><button className="account-button" onClick={() => {
           if (isAuthenticated) void logout({ logoutParams: { returnTo: nativeAuth ? nativeRedirectUri : `${window.location.origin}${import.meta.env.BASE_URL}` }, ...(nativeAuth ? { openUrl: async (url: string) => { await Browser.open({ url, windowName: '_self' }) } } : {}) })
-          else if (authEnabled) startHumanSignIn()
+          else if (authEnabled) setWelcome(true)
           else if (authEnvironmentMismatch) setToast('Secure sign-in is not configured for this release environment. You can still connect a wallet directly.')
           else { changeSection('wallet'); setToast('Connect any available wallet directly. An account sign-in is not required.') }
         }}><span className="account-dot">{isAuthenticated ? (user?.name?.slice(0, 1) ?? 'P') : 'P'}</span><span>{authLoading ? 'Loading…' : isAuthenticated ? (user?.name ?? 'Account') : 'Sign in'}</span><ChevronDown size={14} /></button></div>
