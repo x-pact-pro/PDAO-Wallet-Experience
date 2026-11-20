@@ -20,6 +20,9 @@ being mistaken for production sources.
 - `/home/x-pact/PDAO-Wallet-Nova` and `/home/x-pact/PDAO-Wallet-Prestige` are
   local prototypes without a production remote; they must not be merged into
   the product without an explicit review.
+- Those three non-authoritative wallet copies have been moved to
+  `/home/x-pact/.quarantine/pdao-wallet-noncanonical-2026-11-20/` for
+  recoverable storage; they were not deleted.
 - Files under `/home/x-pact/Desktop/PDAO-Wallet-Deliverables/` are immutable
   review artifacts, not source. Each artifact must identify its source commit,
   platform, signing status, and verification result.
