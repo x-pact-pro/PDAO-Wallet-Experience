@@ -16,6 +16,11 @@ window.PDAO_CONFIG = Object.freeze({
     resourceId: 'RS3MMqZWGRlX86xgpf8MzQ30nqSJp',
     agentApiOrigin: 'https://nnnx1tvyqb.execute-api.us-east-1.amazonaws.com',
   }),
+  web3auth: Object.freeze({
+    enabled: true,
+    clientId: 'BL_AEOxkGYVBTRb8CC1VBLGsBBMUWur402THpI3FgTRViP5Z4-L-Jq_hUBdXa07JfQQq-HicKujugvLPGYfGBzo',
+    network: 'sapphire_mainnet',
+  }),
   persona: Object.freeze({ templateId: '', environmentId: '' }),
   marketData: Object.freeze({
     origin: 'https://api.coingecko.com',

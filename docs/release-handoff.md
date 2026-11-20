@@ -1,5 +1,24 @@
 # Release handoff
 
+## r31 — official Web3Auth embedded-wallet path
+
+Source adds the official `@web3auth/modal@11.4.3` Embedded Wallet SDK using
+the supplied public Sapphire Mainnet Client ID. The welcome screen now has one
+explicit embedded-wallet choice; Google and email remain the separate Auth0
+human-sign-in choices, and external wallet discovery remains a separate path.
+The SDK is lazy-loaded only after the user selects the embedded wallet. The
+app reads public account addresses/provider handles only; it does not read or
+send private keys, recovery phrases, or passphrases.
+
+`npm run typecheck`, `npm test`, `npm run build`, `npm run lint`,
+`npm run build:extension`, Android asset sync, and the Android API 35 debug
+build passed. The live Amplify deployment is pending this handoff commit.
+No Auth0 custom Web3Auth verifier, Descope client/token, funded transaction,
+Chrome Web Store publication, or F-Droid acceptance is claimed here.
+
+The official reference used for the implementation is the
+[MetaMask Embedded Wallets Web SDK guide](https://docs.metamask.io/embedded-wallets/sdk/js/).
+
 ## r30 — fail-closed team bot activation
 
 Source commit `53f52c8` closes a real state mismatch in Team Bots: default and

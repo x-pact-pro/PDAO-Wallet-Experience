@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { formatUsdPrice } from './lib/formatPrice'
+import { connectEmbeddedWallet } from './lib/embeddedWallet'
 import './App.css'
 import './AppRefinements.css'
 import './Ask.css'
@@ -95,6 +96,7 @@ function App() {
   const [amount, setAmount] = useState('0.10')
   const [menuOpen, setMenuOpen] = useState(false)
   const [toast, setToast] = useState('')
+  const [embeddedWalletBusy, setEmbeddedWalletBusy] = useState(false)
   const authRequestInFlight = useRef(false)
   useEffect(() => {
     const reportAuthError = (event: Event) => {
@@ -313,9 +315,23 @@ function App() {
       setToast('Sign-in could not be completed. Please choose one sign-in method and try again.')
     })
   }
+  const startEmbeddedWallet = async () => {
+    if (embeddedWalletBusy) return
+    setEmbeddedWalletBusy(true)
+    try {
+      const wallets = await connectEmbeddedWallet()
+      setConnectedWallets(current => [...current.filter(item => !item.id.startsWith('embedded:')), ...wallets])
+      enter('wallet')
+      setToast('Embedded wallet connected. Transactions still require your explicit approval.')
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : 'Embedded wallet connection could not be completed.')
+    } finally {
+      setEmbeddedWalletBusy(false)
+    }
+  }
   const changeSection = (id: Section) => { setSection(id); setMobileNav(false) }
 
-  if (welcome) return <Welcome onEnter={() => enter()} onGoogle={() => startHumanSignIn('google-oauth2')} onEmail={() => startHumanSignIn('email')} onCreateWallet={() => enter('wallet')} onRestoreWallet={() => enter('wallet')} onConnectWeb3={() => enter('wallet')} />
+  if (welcome) return <Welcome onEnter={() => enter()} onGoogle={() => startHumanSignIn('google-oauth2')} onEmail={() => startHumanSignIn('email')} onCreateWallet={() => void startEmbeddedWallet()} onRestoreWallet={() => enter('wallet')} onConnectWeb3={() => enter('wallet')} />
 
   const toggleSidebar = () => setSidebarCollapsed(current => {
     const next = !current

@@ -35,6 +35,7 @@
 
 ## Phase 5 — Identity and assistant
 - [x] Auth0 SPA integration uses a memory token cache on the new Amplify origin; Android uses a separate native client. No private-key coupling.
+- [x] Add the official Web3Auth Embedded Wallet SDK as an explicit, lazy-loaded wallet onboarding choice; keep Auth0 human sign-in and external wallet discovery separate.
 - [x] Descope agent security is branded and documented separately from Auth0 human sign-in; the Bots screen reports the actual rollout state.
 - [x] Deploy a PDAO-owned AWS HTTP API with Descope issuer/audience validation and a route-level `agent.identity.read` requirement; missing bearer tokens return 401.
 - [ ] Create the Descope API Resource and approved agent clients/policies; verify a real scoped token before enabling agent access. Existing Stockholm Agent Exchange/x402 endpoints remain on their current contract.
